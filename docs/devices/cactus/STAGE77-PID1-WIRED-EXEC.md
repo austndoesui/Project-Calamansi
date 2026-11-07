@@ -1,0 +1,7 @@
+# Stage77 — wired PID1 execargs hardware trial (2026-11-07)
+
+XNU development build from Actions 41790100285 (commit 478b2af) verified SHA256 `60d31b08a485278c2ea75c15b099d25af00bd6ffd78c25dc118ee9368c44bab4`. Stage77 repacks the same signed Stage65 minimal PID1 Mach-O, uses the bounded Stage76 shadow pathname and wired PID1 exec arguments. Strict relocated XNU/GIC/ADT/RAMDisk/PID1 checker PASS; relocated payload SHA256 `b44bfc557d3f1771a4e9931e9423c28001e65fdc37075566ed8639e1f563c1d6`.
+
+Boot image `shim/out/cactus/cactus-trace-stage-77-boot.img`, Android header v2, 45,543,424 bytes, SHA256 `a0abf2407c6ebd3795e1ba57a3ea5c9ac1f386ede2f8bf27e1b33e7c4c3c9468`, header/image and sidecar verified. Device serial `<REDACTED_DEVICE_SERIAL>` product cactus. Fastboot flash boot OKAY, reboot OKAY using `shim/run-stage49.ps1 -Stage 77 -CaptureSeconds 60`.
+
+COM25 capture: `../usb-captures/stage-cactus-20261107-001952-627/session-001-002002-892.bin`: 4480 bytes, 80 valid frames, 0 bad, 0 noise, 11 sequence gaps. Kernel identification `0x60d31b08a485278c` and native handoff marker `0x3500` present; prehandoff trace **INCOMPLETE** due dropped records. This USB stream does not establish XNU BSD or PID1 runtime result. Await physical framebuffer status (`ST77 PID1 wired path enter`, `ST77 PID1 pathname DONE/ERROR`, or further progress). Preserve Stage75 hardware-confirmed baseline and existing rollback images.

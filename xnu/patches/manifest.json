@@ -1,0 +1,818 @@
+{
+  "version": 1,
+  "origin": "austndoesui/Cactarwin branch stage61-cactus-gicr-id-guard commit ccc8974",
+  "patches": [
+    {
+      "order": 1,
+      "scope": "common",
+      "source": "xnu/patches/common/0001-new-clang-drop-removed-auto-var-init-flag.patch",
+      "upstream_name": "0001-new-clang-drop-removed-auto-var-init-flag.patch",
+      "sha256": "c057dea49d5bcccbc7d317d60f91cc8062689fd26d3d739f709e279bddb56a1c"
+    },
+    {
+      "order": 2,
+      "scope": "common",
+      "source": "xnu/patches/common/0002-new-clang-backport-UIO_STACKBUF.patch",
+      "upstream_name": "0002-new-clang-backport-UIO_STACKBUF.patch",
+      "sha256": "19f7571eb90608ef66f1d8cf9dee5333d4fbbccbfeee9ea244b90cb4a4240727"
+    },
+    {
+      "order": 3,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0003-sweet-framebuffer-serial-console.patch",
+      "upstream_name": "0003-sweet-framebuffer-serial-console.patch",
+      "sha256": "ff08f768b0e7d830efd1cab98b8cb18e66c60935c4b640e74146e5c1cbb5371c"
+    },
+    {
+      "order": 4,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0004-sweet-machine-config.patch",
+      "upstream_name": "0004-sweet-machine-config.patch",
+      "sha256": "b18a77a0b994871937a0b4138906f9f1693153c61eca6e598018271360ad5432"
+    },
+    {
+      "order": 5,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0005-non-pac-build-fixes.patch",
+      "upstream_name": "0005-non-pac-build-fixes.patch",
+      "sha256": "b84deb9b9e5b8426aca7b713c3c5b5829e4e22354dd86d64329f14b15704d58c"
+    },
+    {
+      "order": 6,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0006-sweet-master-config-open-source-asm-pmap.patch",
+      "upstream_name": "0006-sweet-master-config-open-source-asm-pmap.patch",
+      "sha256": "c7cf993c8362a689371f2b819903792be2deb5032e9ea7edc20a4abd627e233f"
+    },
+    {
+      "order": 7,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0007-sweet-stub-apple-internal-headers.patch",
+      "upstream_name": "0007-sweet-stub-apple-internal-headers.patch",
+      "sha256": "8c8e43ac50591a2c6e4f1c1bff4edeb1935f8e02b28db50596f3be9a3a80c8e5"
+    },
+    {
+      "order": 8,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0008-sweet-fill-closed-lib-gaps-kpc-stub.patch",
+      "upstream_name": "0008-sweet-fill-closed-lib-gaps-kpc-stub.patch",
+      "sha256": "4a959eeac46696c08fe826a0d0a7d602c0767f5f92bf28bd641e5c6fb5a7d452"
+    },
+    {
+      "order": 9,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0009-sweet-drop-apple-soc-only-exports.patch",
+      "upstream_name": "0009-sweet-drop-apple-soc-only-exports.patch",
+      "sha256": "07ed88210debc8395944e1fafd1771abd5935f31ebae620ff8f15fd96d9a810e"
+    },
+    {
+      "order": 10,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0010-sweet-early-framebuffer-debug.patch",
+      "upstream_name": "0010-sweet-early-framebuffer-debug.patch",
+      "sha256": "bdc940de4f8d51b0d254b89e54036dcbfd1e33baaaa13267ae2b9ad980046c5a"
+    },
+    {
+      "order": 11,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0011-sweet-physmap-alignment-padding.patch",
+      "upstream_name": "0011-sweet-physmap-alignment-padding.patch",
+      "sha256": "4c1c2d3f82222a8182060ffd5f681905c20d9232ec972001daa8c25b21ada520"
+    },
+    {
+      "order": 12,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0012-sweet-keep-debug-console-after-ttbr0.patch",
+      "upstream_name": "0012-sweet-keep-debug-console-after-ttbr0.patch",
+      "sha256": "6e5f5e04b940f2c35e17f97df480784459a922e8fc40b8c75b637325c35a474f"
+    },
+    {
+      "order": 13,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0013-sweet-kmem-rng-without-corecrypto.patch",
+      "upstream_name": "0013-sweet-kmem-rng-without-corecrypto.patch",
+      "sha256": "12132c39435479e546d1ce4e24622d2ad145c8eb6274293b690ea5e1e58d9f91"
+    },
+    {
+      "order": 14,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0014-sweet-kernel-hmac-prng.patch",
+      "upstream_name": "0014-sweet-kernel-hmac-prng.patch",
+      "sha256": "04d13bf3c6c2e23c95c55677a6aa8f1e5c69971d8615eee7d0f05ba9d6963237"
+    },
+    {
+      "order": 15,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0015-sweet-unavailable-trust-cache-runtime.patch",
+      "upstream_name": "0015-sweet-unavailable-trust-cache-runtime.patch",
+      "sha256": "52c922333707deb9f9e697cf5ba092213dcb578f36ca209e750582a650b1eb18"
+    },
+    {
+      "order": 16,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0016-sweet-device-tree-platform-expert.patch",
+      "upstream_name": "0016-sweet-device-tree-platform-expert.patch",
+      "sha256": "b71c0fc56d832537a6ca096a3fe4893c498c234adb4fde419e1a791de74172ab"
+    },
+    {
+      "order": 17,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0017-sweet-device-tree-virtual-timer-irq.patch",
+      "upstream_name": "0017-sweet-device-tree-virtual-timer-irq.patch",
+      "sha256": "b3b561af3354f8c1297a084c8025c282d28aeb0d4e14758d6d63bdc81cd0bd50"
+    },
+    {
+      "order": 18,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0018-sweet-boot-cpu-driver.patch",
+      "upstream_name": "0018-sweet-boot-cpu-driver.patch",
+      "sha256": "06de6e84d8ff9b0307872fb78a827e84fc1e16a1b7286a87f0e618a5dc2692a9"
+    },
+    {
+      "order": 19,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0019-stage-libpthread.sh",
+      "upstream_name": "0019-stage-libpthread.sh",
+      "sha256": "ce0913893337c825762b57681892b072a17dffff38e6a8f79c2557e2e7bfc3a1"
+    },
+    {
+      "order": 19,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0019-sweet-builtin-pthread.patch",
+      "upstream_name": "0019-sweet-builtin-pthread.patch",
+      "sha256": "ee34ec3e5876f1316c6665059c3c38a09602bc100d805cebe23f260e2033899d"
+    },
+    {
+      "order": 20,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0020-stage-bearssl.sh",
+      "upstream_name": "0020-stage-bearssl.sh",
+      "sha256": "a45d37cee0d1c637b82b19c2875a84086be923be04e09d95bf8bcb9c05d08105"
+    },
+    {
+      "order": 20,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0020-sweet-portable-aes-cbc.patch",
+      "upstream_name": "0020-sweet-portable-aes-cbc.patch",
+      "sha256": "b05cdf11845d95bc9cff7d9ca44ef4d24d303bcf759cb5bb74a9408473161b26"
+    },
+    {
+      "order": 21,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0021-sweet-mockfs-ramdisk-root.patch",
+      "upstream_name": "0021-sweet-mockfs-ramdisk-root.patch",
+      "sha256": "27b5a4fb195e772178a60311d5d1935a908bd223ea7ebb5fca811532ad975e2c"
+    },
+    {
+      "order": 22,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0022-sweet-ramdisk-root-without-iomedia.patch",
+      "upstream_name": "0022-sweet-ramdisk-root-without-iomedia.patch",
+      "sha256": "ca83981bb7bd4d4f8ab22919f74ee88577b628f7a9049af222af609d9a721461"
+    },
+    {
+      "order": 23,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0023-sweet-builtin-sha256-for-libkern.patch",
+      "upstream_name": "0023-sweet-builtin-sha256-for-libkern.patch",
+      "sha256": "9f2e879d87d976200ee8697182121a15d73c22ec3beeb14c2d35069be01267f9"
+    },
+    {
+      "order": 24,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0024-sweet-mockfs-virtual-ramdisk-io.patch",
+      "upstream_name": "0024-sweet-mockfs-virtual-ramdisk-io.patch",
+      "sha256": "20d0a830ed4128141b3b211fd50cfed090bc490597c4f8b36256cc93f003dc76"
+    },
+    {
+      "order": 25,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0025-sweet-builtin-amfi-no-entitlements.patch",
+      "upstream_name": "0025-sweet-builtin-amfi-no-entitlements.patch",
+      "sha256": "5cb4008df97884c35943d6f4b9349e89768072b9bf00e1032a32a8f65166eae6"
+    },
+    {
+      "order": 26,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0026-stage-hfs.sh",
+      "upstream_name": "0026-stage-hfs.sh",
+      "sha256": "0981a619d516f990fd3e21ab43e9c52af4b32ecfb606b4fd002d70cc8077a941"
+    },
+    {
+      "order": 26,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0026-sweet-builtin-hfs.patch",
+      "upstream_name": "0026-sweet-builtin-hfs.patch",
+      "sha256": "465d96fd71bc2094d0aa0388e1a2586ea7fd856d021272d1d2d7083bd020d6e4"
+    },
+    {
+      "order": 27,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0027-sweet-bearssl-md5.patch",
+      "upstream_name": "0027-sweet-bearssl-md5.patch",
+      "sha256": "98d9c82553b790468d3675f74821ced99eb524350ed9b7fd7cc796fdd26f981e"
+    },
+    {
+      "order": 28,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0028-sweet-ufs-root-device.patch",
+      "upstream_name": "0028-sweet-ufs-root-device.patch",
+      "sha256": "249f468e5c85bfa53f4005f5c1c669004462d424dd95b612268091a73e13cecc"
+    },
+    {
+      "order": 29,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0029-sweet-unsealed-root-volume.patch",
+      "upstream_name": "0029-sweet-unsealed-root-volume.patch",
+      "sha256": "e76d458b4ee831309759425f10347caff6d6fc7736e024abf0afcea0623c04ac"
+    },
+    {
+      "order": 30,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0030-sweet-ufs-writes.patch",
+      "upstream_name": "0030-sweet-ufs-writes.patch",
+      "sha256": "fb2869176d0fb4cc55d8754aec609015d529696fc783de025368b44834192802"
+    },
+    {
+      "order": 31,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0031-sweet-read-write-root.patch",
+      "upstream_name": "0031-sweet-read-write-root.patch",
+      "sha256": "949a2ddd2832e39e4e36b3f40888718ec30201142d5d14e79203f0000f79e056"
+    },
+    {
+      "order": 32,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0032-sweet-bearssl-sha1.patch",
+      "upstream_name": "0032-sweet-bearssl-sha1.patch",
+      "sha256": "611f179956b844d0cc0e2a5d53eb664552420a6804551e1f5f55eb17040a31ed"
+    },
+    {
+      "order": 33,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0033-sweet-bearssl-sha384-sha512.patch",
+      "upstream_name": "0033-sweet-bearssl-sha384-sha512.patch",
+      "sha256": "13641194f854ed7da857394facfd6b5b3339716ced2f90e02836fd9fa689476d"
+    },
+    {
+      "order": 34,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0034-sweet-ufs-dma-above-4g.patch",
+      "upstream_name": "0034-sweet-ufs-dma-above-4g.patch",
+      "sha256": "e1e76854114d882db815889b3109d27fe63abc839c3ef4bcf235d32ca36eec7f"
+    },
+    {
+      "order": 35,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0035-sweet-amfi-entitlements-platform-binaries.patch",
+      "upstream_name": "0035-sweet-amfi-entitlements-platform-binaries.patch",
+      "sha256": "fa98049cca8a1ac0f77592117897b4dfa9a357606f97a66183525d96c5b3e252"
+    },
+    {
+      "order": 36,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0036-sweet-amfi-cs-signed.patch",
+      "upstream_name": "0036-sweet-amfi-cs-signed.patch",
+      "sha256": "a23593fac4ad8b59160dd8363db5eafd799b19f59378ce01b2d07a9fa02f8904"
+    },
+    {
+      "order": 37,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0037-sweet-config-bindfs.patch",
+      "upstream_name": "0037-sweet-config-bindfs.patch",
+      "sha256": "53159e116791f743cc5f2b7a5ec9ec31c4f308fe44dd62c94417985c9a457e53"
+    },
+    {
+      "order": 38,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0038-sweet-applekeystore.patch",
+      "upstream_name": "0038-sweet-applekeystore.patch",
+      "sha256": "71ab043a53c00db2814878c85818d83e97ae580ee0b3bde3ddf1dd1e97038087"
+    },
+    {
+      "order": 39,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0039-sweet-coredump-default-off.patch",
+      "upstream_name": "0039-sweet-coredump-default-off.patch",
+      "sha256": "6d60ba2732759a8fc1dbe183dbe16a8f05462e861b8008a76a6dcb20a812df8b"
+    },
+    {
+      "order": 40,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0040-sweet-iowatchdog.patch",
+      "upstream_name": "0040-sweet-iowatchdog.patch",
+      "sha256": "c58a94a2ce3acc03e5b60efc1a98a8c8fd723fe139908186396a119248879669"
+    },
+    {
+      "order": 41,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0041-sweet-hfs-link-notes.patch",
+      "upstream_name": "0041-sweet-hfs-link-notes.patch",
+      "sha256": "ef924399bbef4728daa16cec9421e583aab301d327a480c0b9dcac6ce68b2728"
+    },
+    {
+      "order": 42,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0042-sweet-short-exec-log.patch",
+      "upstream_name": "0042-sweet-short-exec-log.patch",
+      "sha256": "aed20087fb248a87567883dafb7f2e83da8647c1e8ef112299052decb2167fdd"
+    },
+    {
+      "order": 43,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0043-sweet-console-crash-log.patch",
+      "upstream_name": "0043-sweet-console-crash-log.patch",
+      "sha256": "ef83e99baf6ae1b9cc35968d06bb49262c10ea07f51e64bfbb58d50c5a5e58e6"
+    },
+    {
+      "order": 44,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0044-sweet-crash-log-reason.patch",
+      "upstream_name": "0044-sweet-crash-log-reason.patch",
+      "sha256": "f1b4085e217de41a9b26824d3bd0c27fec15abb2b016abc98acd7b44249a99b3"
+    },
+    {
+      "order": 45,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0045-sweet-iowatchdog-pmu-primary.patch",
+      "upstream_name": "0045-sweet-iowatchdog-pmu-primary.patch",
+      "sha256": "5733977651e593d6a4179b7b16d3d8c14459dff1ae48dc16d1ff718cff0ca4d2"
+    },
+    {
+      "order": 46,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0046-sweet-iosurface-iomfb.patch",
+      "upstream_name": "0046-sweet-iosurface-iomfb.patch",
+      "sha256": "0f23986cf9861ad52a6a0986328fa83c9f0ec222d53dee2bce5921d79c90e5be"
+    },
+    {
+      "order": 47,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0047-sweet-persistent-console-log.patch",
+      "upstream_name": "0047-sweet-persistent-console-log.patch",
+      "sha256": "1e73bc5acf4823f5c842ea2b61c70595a2ca764872d13cd2aafbcec8db708017"
+    },
+    {
+      "order": 48,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0048-sweet-devnull-tee.patch",
+      "upstream_name": "0048-sweet-devnull-tee.patch",
+      "sha256": "ced1853fa17a1a542935f7fb549591aeb3a7184dadd18fd8111812a5b3a66d91"
+    },
+    {
+      "order": 49,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0049-sweet-iokit-trace.patch",
+      "upstream_name": "0049-sweet-iokit-trace.patch",
+      "sha256": "c0522c74d30e577707174d0fb3e5bda005ac35f81339d8f1ab4e2a50de413f85"
+    },
+    {
+      "order": 50,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0050-sweet-sandbox-policy.patch",
+      "upstream_name": "0050-sweet-sandbox-policy.patch",
+      "sha256": "d2c2036e2a4e2388d442165cd0b85f7bf622f6d249a75e4242fb1994076142bd"
+    },
+    {
+      "order": 51,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0051-sweet-crash-heap-strings.patch",
+      "upstream_name": "0051-sweet-crash-heap-strings.patch",
+      "sha256": "8b0fc8aaa7f2a76ef6202db233dc6c2134fd163c212393c5838dc238dfdcaec4"
+    },
+    {
+      "order": 52,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0052-sweet-hfs-rename-swap.patch",
+      "upstream_name": "0052-sweet-hfs-rename-swap.patch",
+      "sha256": "5b115a5435a3d8bd28f9b30bf0eb667a36a3454256ee53b806f0a0f09145f6b2"
+    },
+    {
+      "order": 53,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0053-sweet-crash-scan-springboard.patch",
+      "upstream_name": "0053-sweet-crash-scan-springboard.patch",
+      "sha256": "ed1f28e8a578bade8c4d8ae1e25dd510a1cd0b9f9a5e515418a01c80a2704ff1"
+    },
+    {
+      "order": 54,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0054-sweet-process-sampler.patch",
+      "upstream_name": "0054-sweet-process-sampler.patch",
+      "sha256": "e3ac3a3c5b349f05e9b467588209ac13bf0d2ec6549983796c6cba8fa404430e"
+    },
+    {
+      "order": 55,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0055-sweet-aks-ext-state-sampler-depth.patch",
+      "upstream_name": "0055-sweet-aks-ext-state-sampler-depth.patch",
+      "sha256": "5555b8045c6ab2b0653725cbf2d361f54d296730e83f8495c1c71e0a6c0fa495"
+    },
+    {
+      "order": 56,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0056-sweet-fb-throttled-present.patch",
+      "upstream_name": "0056-sweet-fb-throttled-present.patch",
+      "sha256": "36eb518904a3304d9494e9a58e90e9bd72fe6a577e9bf6f647ad6592c882fa97"
+    },
+    {
+      "order": 57,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0057-sweet-no-ext-resolver.patch",
+      "upstream_name": "0057-sweet-no-ext-resolver.patch",
+      "sha256": "dde36d2d45ee13ee364e7f1e858242d901b828986d6fd3c4157fcfdcd85ff725"
+    },
+    {
+      "order": 58,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0058-sweet-hid-event-services.patch",
+      "upstream_name": "0058-sweet-hid-event-services.patch",
+      "sha256": "9ce7e4b84d0622c6c0153a1d3511f92612e220d2a830049fa428e6ac1625bcc3"
+    },
+    {
+      "order": 59,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0059-sweet-iphone-identity.patch",
+      "upstream_name": "0059-sweet-iphone-identity.patch",
+      "sha256": "59bd94a272d6620d4a402ff09cc96def02f78bd96a10bda0d3cd2e4809a180a0"
+    },
+    {
+      "order": 60,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0060-sweet-keys-touch-drivers.patch",
+      "upstream_name": "0060-sweet-keys-touch-drivers.patch",
+      "sha256": "c77a3393d7ef29e9d5b4ac70dc7d3baa44bc4fa560a25d3f3c20d41a965d4449"
+    },
+    {
+      "order": 61,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0061-sweet-iphone-x-display-size.patch",
+      "upstream_name": "0061-sweet-iphone-x-display-size.patch",
+      "sha256": "d4d795cbb17cc4084f1ce148778a6d908d004a7b41da6f4c0e38353071cca735"
+    },
+    {
+      "order": 62,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0062-sweet-touch-power-battery.patch",
+      "upstream_name": "0062-sweet-touch-power-battery.patch",
+      "sha256": "8a4dc08c61545d31bd2c0a70530434824b3e3d6c4bf96e8b63559db31148a617"
+    },
+    {
+      "order": 63,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0063-sweet-goodix-geni-packing.patch",
+      "upstream_name": "0063-sweet-goodix-geni-packing.patch",
+      "sha256": "02fb16494b60d7c8c91dd1fda7c7ee5f5e3088be01a9633205c02b22a0e7eeb3"
+    },
+    {
+      "order": 64,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0064-sweet-priv-work-interval.patch",
+      "upstream_name": "0064-sweet-priv-work-interval.patch",
+      "sha256": "ef85defd8cbdb9d444070614865d419e0b028e1ab6b0bb8ce1b8b2da8ede63d6"
+    },
+    {
+      "order": 65,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0065-sweet-smp-psci.patch",
+      "upstream_name": "0065-sweet-smp-psci.patch",
+      "sha256": "4aad63a0c924ca516f7960c0484b1a4bea6c97ae4581e20fef2cea0cfe489d16"
+    },
+    {
+      "order": 66,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0066-sweet-crash-fault-region.patch",
+      "upstream_name": "0066-sweet-crash-fault-region.patch",
+      "sha256": "77fd8f78fbbdc0f934d6f966054f059932de5df7b28f75ebea934a4b7cf46182"
+    },
+    {
+      "order": 67,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0067-sweet-console-mute.patch",
+      "upstream_name": "0067-sweet-console-mute.patch",
+      "sha256": "3a5b644a242354c62b73baae3d05a816b982ba9c19836bc7297362813af1c77d"
+    },
+    {
+      "order": 68,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0068-sweet-surface-lookup-cached.patch",
+      "upstream_name": "0068-sweet-surface-lookup-cached.patch",
+      "sha256": "97a5b8a9414761cb9b9d2d666be46ffeb3629faa03185930dbf96a72e0bbf804"
+    },
+    {
+      "order": 69,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0069-sweet-ufs-faster.patch",
+      "upstream_name": "0069-sweet-ufs-faster.patch",
+      "sha256": "d81f1a3da8ad84017e4bf5edb0ed10c0f49159180c0abe5843e417d9391578d3"
+    },
+    {
+      "order": 70,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0070-sweet-pid-hibernate.patch",
+      "upstream_name": "0070-sweet-pid-hibernate.patch",
+      "sha256": "ec925678a435aa3146cb3d8b3bfa4121eea53c5251f77db229737b5902c8801b"
+    },
+    {
+      "order": 71,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0071-sweet-touch-edge.patch",
+      "upstream_name": "0071-sweet-touch-edge.patch",
+      "sha256": "05fa04a2272971f414fe5bccbb7ca75ac4fb3d49bd3c6240990fff0eaff27ccc"
+    },
+    {
+      "order": 72,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0072-sweet-usb-probe.patch",
+      "upstream_name": "0072-sweet-usb-probe.patch",
+      "sha256": "963aa45557d60610d4d11672ed8f678487253caf196a12a247ebcc8389a5a0b9"
+    },
+    {
+      "order": 73,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0073-sweet-usb-device-ep0.patch",
+      "upstream_name": "0073-sweet-usb-device-ep0.patch",
+      "sha256": "66ddd7707ab11dd690a3f3a3d38350ab4ac4a8d1b673a7b740710754d3e9c7de"
+    },
+    {
+      "order": 74,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0074-sweet-usb-vbus-override.patch",
+      "upstream_name": "0074-sweet-usb-vbus-override.patch",
+      "sha256": "e1478db32cb6e19b1e137e38782871935244f29805297d86147b157e7941a20f"
+    },
+    {
+      "order": 75,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0075-sweet-usb-ecm.patch",
+      "upstream_name": "0075-sweet-usb-ecm.patch",
+      "sha256": "16e9a14cff842ef243fb891d3153fcee813b85c8cfb3739f942843e946dcc8e3"
+    },
+    {
+      "order": 76,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0076-sweet-usb-rx-mbuf.patch",
+      "upstream_name": "0076-sweet-usb-rx-mbuf.patch",
+      "sha256": "eba80b448ca75c23b2eaf80ec29d094566361c55d4c30e4cdcc3c93d03456e94"
+    },
+    {
+      "order": 77,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0077-sweet-usb-live-log.patch",
+      "upstream_name": "0077-sweet-usb-live-log.patch",
+      "sha256": "c39f6f8178892b2fc87721dc572d044bdb11a048443fbc28aae6f7010f012c9b"
+    },
+    {
+      "order": 78,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0078-sweet-smp-8-cores.patch",
+      "upstream_name": "0078-sweet-smp-8-cores.patch",
+      "sha256": "3598dc629f16e5f2abb342a7ecb04b3b8d15b4b2709ac9c8af6db89de30c4f7d"
+    },
+    {
+      "order": 79,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0079-sweet-display-power.patch",
+      "upstream_name": "0079-sweet-display-power.patch",
+      "sha256": "062255631bf678f7c1e14c62895bf60372e209b2153d06e73d931f3456028900"
+    },
+    {
+      "order": 80,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0080-sweet-net-trace.patch",
+      "upstream_name": "0080-sweet-net-trace.patch",
+      "sha256": "03a43a3b03fb4c4f87642c007c84fdd3353541a160ae921293e3f7ac9c978b1d"
+    },
+    {
+      "order": 81,
+      "scope": "legacy",
+      "source": "xnu/patches/legacy/0081-sweet-usb-link-state.patch",
+      "upstream_name": "0081-sweet-usb-link-state.patch",
+      "sha256": "4d6b492d81379b93ae831a34a3972cb6366e0412c981385c32b36ee512c95da9"
+    },
+    {
+      "order": 82,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0082-cactus-machine-config.patch",
+      "upstream_name": "0082-cactus-machine-config.patch",
+      "sha256": "6e61e887a8cd36ca5050c77f6e7b8b510f397993390c05d71a172d1666048abb"
+    },
+    {
+      "order": 84,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0084-cactus-16k-pte-align.patch",
+      "upstream_name": "0084-cactus-16k-pte-align.patch",
+      "sha256": "97d4df175ee5ae93e6ae9ef6c0aede8343fed0a81302d00c82927e1ff3f1096e"
+    },
+    {
+      "order": 85,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0085-cactus-commpage-16k-align.patch",
+      "upstream_name": "0085-cactus-commpage-16k-align.patch",
+      "sha256": "9b9686bc322e3020cdb8d8751dd8adfec9a5b09497a99da54de03d247b17bf4b"
+    },
+    {
+      "order": 86,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0086-cactus-early-io-l1-tables.patch",
+      "upstream_name": "0086-cactus-early-io-l1-tables.patch",
+      "sha256": "2b523cbd1e793db497f5873f707cdc04b2a02f7dd14f3c045a86037780002dd7"
+    },
+    {
+      "order": 87,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0087-cactus-early-io-extent.patch",
+      "upstream_name": "0087-cactus-early-io-extent.patch",
+      "sha256": "4db5d2d8d34faf0a4914ba8f7c588e91fc4b24fab1ce60225300a46b6fa81912"
+    },
+    {
+      "order": 88,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0088-cactus-live-lk-layer1-console.patch",
+      "upstream_name": "0088-cactus-live-lk-layer1-console.patch",
+      "sha256": "9b74878a8c29e862b3e24c4223f9f9d828e7ba606d670785b201ded65415b7dd"
+    },
+    {
+      "order": 89,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0089-cactus-native-console-debug.patch",
+      "upstream_name": "0089-cactus-native-console-debug.patch",
+      "sha256": "be6d25fac1048a5a9d310824ce332cc5e61e0f23506ba9886467c8ca16c5ca37"
+    },
+    {
+      "order": 90,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0090-cactus-startup-fbcon.patch",
+      "upstream_name": "0090-cactus-startup-fbcon-stage53.patch",
+      "sha256": "9f997e11658bedae6e1697a17f26cf1a37a640e42bb981528500ca37df4f7152"
+    },
+    {
+      "order": 91,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0091-cactus-iokit-bsd.patch",
+      "upstream_name": "0091-cactus-iokit-bsd-stage54.patch",
+      "sha256": "d5d6c9ba01090dae7011f57b3a758e251b17144739a5abf2a00d6423f04c589e"
+    },
+    {
+      "order": 92,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0092-cactus-bsd-gate.patch",
+      "upstream_name": "0092-cactus-bsd-gate-stage55.patch",
+      "sha256": "8d335133fb8b2c8efc2f1256542ca3bfd7fa0740a875801c742b66b85f9d138b"
+    },
+    {
+      "order": 93,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0093-cactus-cpu-sync.patch",
+      "upstream_name": "0093-cactus-cpu-sync-stage56.patch",
+      "sha256": "72f80e3c5279b56d72bbb92e5c967656f76e72cb00dad5379cec1ba8b8c300ed"
+    },
+    {
+      "order": 94,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0094-cactus-cpu0-sgi.patch",
+      "upstream_name": "0094-cactus-cpu0-sgi-stage57.patch",
+      "sha256": "168d041e9ea08a921a21efe7741849706d1dd013fa5089e85e991edb78595d96"
+    },
+    {
+      "order": 95,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0095-cactus-gicv3-irq.patch",
+      "upstream_name": "0095-cactus-gicv3-irq-stage58.patch",
+      "sha256": "fc980bc724caeaf27f706e8bb1642a19aa13594b0e5164c83c36ba8b42aaf8dd"
+    },
+    {
+      "order": 96,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0096-cactus-sgi-wait.patch",
+      "upstream_name": "0096-cactus-sgi-wait-stage59.patch",
+      "sha256": "55786cbd622b6ccd5e1c25a0a8cc78063e32084eeb31e10e4a175e6d89d5f3a5"
+    },
+    {
+      "order": 97,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0097-cactus-sgi8-gic-diag.patch",
+      "upstream_name": "0097-cactus-sgi8-gic-diag-stage60.patch",
+      "sha256": "f606e3457b606bfe7171f350ecc7931c8f065e403a8b0d5471f3720e55a2a5b8"
+    },
+    {
+      "order": 98,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0098-cactus-gicr-frame-validate.patch",
+      "upstream_name": "0098-cactus-gicr-frame-validate-stage61.patch",
+      "sha256": "1cd29ecf4ece3da325e983f56f62c5264dcd35b02db3d104e636d3514aa952c9"
+    },
+    {
+      "order": 99,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0099-cactus-gicr-map-census.patch",
+      "upstream_name": "0099-cactus-gicr-map-census-stage63.patch",
+      "sha256": "d2d1a7da150e93b2861eb1c203a3d8ee81de944944cab3dca5ea0f90cd916f06"
+    },
+    {
+      "order": 100,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0100-cactus-pid1-status.patch",
+      "upstream_name": "0100-cactus-pid1-status-stage65.patch",
+      "sha256": "31e4113cc8c37abe946a1e7f47ee5bdb18e45d488d519df5248f292a32916503"
+    },
+    {
+      "order": 101,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0101-cactus-pid1-top-banner.patch",
+      "upstream_name": "0101-cactus-pid1-top-banner-stage66.patch",
+      "sha256": "1789bf25a45ac3a571d4fae36595a78ca4b0db594802f39824000533bfbc7916"
+    },
+    {
+      "order": 102,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0102-cactus-visible-bar-vfs.patch",
+      "upstream_name": "0102-cactus-visible-bar-vfs-stage67.patch",
+      "sha256": "c707fe7ed3a74212cb517c50b900de3aaaff034c23b578cc51ac02cd6e9dd5fb"
+    },
+    {
+      "order": 103,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0103-cactus-bsd-root-pid1.patch",
+      "upstream_name": "0103-cactus-bsd-root-pid1-stage68.patch",
+      "sha256": "e1733ef90b8b126d3de6a743879337d0ac0cf17d922f78d40cfc3852188d08cf"
+    },
+    {
+      "order": 104,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0104-cactus-bsd-root-pid1.patch",
+      "upstream_name": "0104-cactus-bsd-root-pid1-stage69.patch",
+      "sha256": "883cb098118fae8d1f84d1d6de5317a20675aa7cd48d65faffe0bf6e5eaa3f30"
+    },
+    {
+      "order": 105,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0105-cactus-minimal-pid1.patch",
+      "upstream_name": "0105-cactus-minimal-pid1-stage70.patch",
+      "sha256": "b31b72d20d3cbd80c90b70d25925db39df4a8428ddd12fcdce748347fb943c57"
+    },
+    {
+      "order": 106,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0106-cactus-pid1-direct-mockfs.patch",
+      "upstream_name": "0106-cactus-pid1-direct-mockfs-stage71.patch",
+      "sha256": "84de3b565f31ab8ca6ed5a3320e079fd4167de0991d4d8234d9fd4ae869e471a"
+    },
+    {
+      "order": 107,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0107-cactus-mockfs-posix-pid1.patch",
+      "upstream_name": "0107-cactus-mockfs-posix-pid1-stage72.patch",
+      "sha256": "e0c26239529fcf3db990bb501c060c02b6761ebeed921796bcbebe0dd3b8a5ea"
+    },
+    {
+      "order": 108,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0108-cactus-pid1-vm.patch",
+      "upstream_name": "0108-cactus-pid1-vm-stage73.patch",
+      "sha256": "aaf18352d988f4195a880b711877d94d5f2a0f89fbd0211285b56709134bd2dc"
+    },
+    {
+      "order": 109,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0109-cactus-pid1-physmap.patch",
+      "upstream_name": "0109-cactus-pid1-physmap-stage74.patch",
+      "sha256": "965fdedaf5f2ce88fa43ea29630e52680012f5c5d0ca197cba91b71ed3d1e533"
+    },
+    {
+      "order": 110,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0110-cactus-pid1-exec-read.patch",
+      "upstream_name": "0110-cactus-pid1-exec-read-stage75.patch",
+      "sha256": "836f44714d905d1957ec08dd282e41efe0daf31351defef2c79cc4693651e030"
+    },
+    {
+      "order": 111,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0111-cactus-pid1-shadow.patch",
+      "upstream_name": "0111-cactus-pid1-shadow-stage76.patch",
+      "sha256": "90ecc15da4f4248a4edca6ea183a59ade97edee7c8595046bd6d4d88463d7208"
+    },
+    {
+      "order": 112,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0112-cactus-pid1-wired-exec.patch",
+      "upstream_name": "0112-cactus-pid1-wired-exec-stage77.patch",
+      "sha256": "9cd4d5fcdc84249ee021a7416844117bf35db6fd6615ff29ce587eb06ceeffb1"
+    },
+    {
+      "order": 113,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0113-cactus-pid1-header-trace.patch",
+      "upstream_name": "0113-cactus-pid1-header-trace-stage78.patch",
+      "sha256": "f7db576fffe2e9d9fcb49356dd9496c3eb3436b42399ab211a322dc6b59243dc"
+    },
+    {
+      "order": 114,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0114-cactus-mockfs-vnode-read.patch",
+      "upstream_name": "0114-cactus-mockfs-vnode-read-stage79.patch",
+      "sha256": "3ace18782b90c5b2cf41aafd3931d90f5fdfa9dc458c2481124b50b547adab3c"
+    }
+  ]
+}

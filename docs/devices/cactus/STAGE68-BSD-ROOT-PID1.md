@@ -1,0 +1,9 @@
+# Stage68 — BSD root and PID1 checkpoint sweep (2026-11-03)
+
+Stage67 on-device displayed amber PID1 and `ST67 BSD VFS returned`, proving VFS initialization completed. Stage68 adds framebuffer checkpoint messages for post-VFS / mbuf, autoconf, pre-root setup, root selection, mountroot entry/success/retry, root vnode, devfs, initproc creation, userspace VM, PID1 search, exec attempt/failure. The existing Stage53 bootstrapping enter/done probes remain and are reused. PID1 color changes green only upon a real PID1 getpid syscall.
+
+Cloud build: Cactarwin branch `stage61-cactus-gicr-id-guard`, commit `c903c67`, GitHub Actions `41623942988` SUCCESS. Required XNU patches 0100/0101/0102/0103 all actually applied (verified in build logs). The kernel Mach-O contains every new `ST68` status string. Kernel SHA256: df201510edfda5e2392ac3e8abd400e01601417ac9610b62fe19110de152a072.
+
+Verified relocated XNU payload SHA256: 8124fbf013d9f80a7bfffa68bfb25fef27ccffd4cb724c93a378752d82d973ea. Native C entry physical 0x81ac37dc, join 0x81ac3e0c, post marker 0x81ac3e68. Strict binary, branch, GIC ADT and signed static PID1 guards passed. Linux shim boot image `shim/out/cactus/cactus-trace-stage-68-boot.img` size 45,541,376 bytes SHA256 1318e67444d9f86356dbb286ac6c4cbc8cb16091dd1da50179b91dff0154033f. USB decoder unit tests: 16/16 passed.
+
+Flashed to product `cactus` fastboot serial <REDACTED_DEVICE_SERIAL>, `boot` write OKAY, reboot OKAY. COM25 capture at `F:\ROM\patching\redmi 6a xnu\usb-captures\stage-cactus-20261103-164235-885\session-001-164245-803.bin`: 80 valid frames, 0 corrupted, 11 sequence gaps; eight GICR physical frames, exact Stage68 identity `0xdf201510edfda5e2`, native XNU handoff `0x3500` confirmed. Decoder reports 'STAGE68 INCOMPLETE' due dropped frames and cannot observe post-handoff XNU. **Do not infer root mount or PID1 from COM25.** Await device framebuffer latest STATUS and bar color to locate BSD's next blocked instruction.
