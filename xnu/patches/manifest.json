@@ -834,6 +834,13 @@
       "source": "xnu/patches/devices/cactus/0117-cactus-pid1-macho-4k-activation.patch",
       "upstream_name": "0117-cactus-pid1-macho-4k-activation-stage82.patch",
       "sha256": "b3ba21c8c7b275f8c95103a248e8d5aa61fc1ce849ea34d29b760ddf8ac89521"
+    },
+    {
+      "order": 118,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0118-cactus-pid1-postparse-pagein.patch",
+      "upstream_name": "0118-cactus-pid1-postparse-pagein-stage83.patch",
+      "sha256": "23c068d27541c8a0dc3daef8611ec8b06ef174f764df38febd750f0084b27538"
     }
   ]
 }

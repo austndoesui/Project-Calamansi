@@ -1,0 +1,122 @@
+diff --git a/bsd/kern/mach_loader.c b/bsd/kern/mach_loader.c
+--- a/bsd/kern/mach_loader.c
++++ b/bsd/kern/mach_loader.c
+@@ -642,6 +642,9 @@
+ 	/*
+ 	 * Check to see if the page zero is enforced by the map->min_offset.
+ 	 */
++#if defined(CACTUS)
++	cactus_pid1_loader_status("PID1 pagezero begin", 0);
++#endif
+ 	if (enforce_hard_pagezero &&
+ 	    (vm_map_has_hard_pagezero(map, 0x1000) == FALSE)) {
+ #if __arm64__
+@@ -674,7 +677,13 @@
+ 	}
+ #endif
+ 
++#if defined(CACTUS)
++	cactus_pid1_loader_status("PID1 pagezero pass", 0);
++#endif
+ 	vm_commit_pagezero_status(map);
++#if defined(CACTUS)
++	cactus_pid1_loader_status("PID1 pagezero commit", 0);
++#endif
+ 
+ 	/*
+ 	 * If this is an exec, then we are going to destroy the old
+@@ -702,7 +711,13 @@
+ 		 * that may have been left behind by the workqueue threads
+ 		 * as they exited (and then clean up the work queue itself).
+ 		 */
++#if defined(CACTUS)
++		cactus_pid1_loader_status("PID1 task halt start", 0);
++#endif
+ 		kret = task_start_halt(task);
++#if defined(CACTUS)
++		cactus_pid1_loader_status("PID1 task halt result", (int)kret);
++#endif
+ 		if (kret != KERN_SUCCESS) {
+ 			vm_map_deallocate(map); /* will lose pmap reference too */
+ 			return LOAD_FAILURE;
+@@ -710,6 +725,9 @@
+ 		proc_transcommit(p, 0);
+ 		workq_mark_exiting(p);
+ 		task_complete_halt(task);
++#if defined(CACTUS)
++		cactus_pid1_loader_status("PID1 task halt complete", 0);
++#endif
+ 		workq_exit(p);
+ 
+ 		/*
+@@ -720,6 +738,9 @@
+ 		task_rollup_accounting_info(get_threadtask(thread), task);
+ 	}
+ 	*mapp = map;
++#if defined(CACTUS)
++	cactus_pid1_loader_status("PID1 map assigned", 0);
++#endif
+ 
+ #if __has_feature(ptrauth_calls) && defined(XNU_TARGET_OS_OSX)
+ 	/*
+@@ -740,6 +761,9 @@
+ #endif /* __has_feature(ptrauth_calls) && defined(XNU_TARGET_OS_OSX) */
+ 
+ 
++#if defined(CACTUS)
++	cactus_pid1_loader_status("PID1 load_machfile done", 0);
++#endif
+ 	return LOAD_SUCCESS;
+ }
+ 
+@@ -1244,7 +1268,13 @@
+ 				    result,
+ 				    imgp);
+ #if defined(CACTUS)
+-				cactus_pid1_loader_status("PID1 segment64", ret);
++				if (proc_pid(current_proc()) == 1) {
++					char cactus_status[88];
++					snprintf(cactus_status, sizeof(cactus_status),
++					    "ST83 seg %.16s pass=%d ret=%d",
++					    scp64->segname, pass, ret);
++					fbcon_stage53_progress(cactus_status);
++				}
+ #endif
+ 
+ 				if (ret == LOAD_SUCCESS && scp64->fileoff == 0 && scp64->filesize > 0) {
+diff --git a/bsd/miscfs/mockfs/mockfs_vnops.c b/bsd/miscfs/mockfs/mockfs_vnops.c
+--- a/bsd/miscfs/mockfs/mockfs_vnops.c
++++ b/bsd/miscfs/mockfs/mockfs_vnops.c
+@@ -35,6 +35,7 @@
+ #include <sys/buf.h>
+ #include <sys/uio.h>
+ #include <sys/errno.h>
++#include <sys/proc.h>
+ #endif
+ #include <vfs/vfs_support.h>
+ 
+@@ -455,7 +456,23 @@
+ #endif
+ 	}
+ 
+-	return cluster_pagein(ap->a_vp, ap->a_pl, ap->a_pl_offset, ap->a_f_offset, ap->a_size, fsnode->size, ap->a_flags);
++#if defined(CACTUS)
++    if (proc_pid(current_proc()) == 1) {
++        extern void fbcon_stage53_progress(const char *);
++        fbcon_stage53_progress("ST83 PID1 executable pagein enter");
++    }
++#endif
++    int pagein_error = cluster_pagein(ap->a_vp, ap->a_pl, ap->a_pl_offset,
++        ap->a_f_offset, ap->a_size, fsnode->size, ap->a_flags);
++#if defined(CACTUS)
++    if (proc_pid(current_proc()) == 1) {
++        extern void fbcon_stage53_progress(const char *);
++        fbcon_stage53_progress(pagein_error ?
++            "ST83 PID1 executable pagein ERROR" :
++            "ST83 PID1 executable pagein finished");
++    }
++#endif
++    return pagein_error;
+ }
+ 
+ /*
