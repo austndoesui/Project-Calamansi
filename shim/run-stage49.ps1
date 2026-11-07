@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 if ($CaptureSeconds -lt 30) { throw 'CaptureSeconds must be at least 30' }
 $shimDir = $PSScriptRoot
-$root = Split-Path (Split-Path $shimDir -Parent) -Parent
+$root = Split-Path $shimDir -Parent
 $bootImage = Join-Path $shimDir "out\cactus\cactus-trace-stage-$Stage-boot.img"
 $hash = if ($Stage -eq 49) {
     '49EA5B6C975603B9B0891180F587B53819CA7AF3C1AC6C6DEBD3DA1640D7405C'

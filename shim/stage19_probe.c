@@ -667,7 +667,7 @@ static int stage20b_arm(void)
 #if defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
         {0x81abe57cull,0xd10343ffu},
         {0x81abe59cull,0x90000a68u},
-        {0x81abe5a4ull,0xb0ffae01u},
+        {0x81abe5a4ull,0x90ffae01u},
         {0x81abe5acull,0x52800020u},
         {0x81abebacull,0xf9400108u},
 #else
@@ -1830,7 +1830,7 @@ void stage19_probe(uintptr_t dtb)
                  STAGE22_TARGET_VA);
 #if defined(CACTUS_STAGE28_FIX) && CACTUS_STAGE28_FIX
 #if defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
-            mark(0x2800,0xa0d33e9f8c73e9b4ull,loaded_entry_pa,loaded_boot_args_pa);
+            mark(0x2800,0x32212e13ff1a92e3ull,loaded_entry_pa,loaded_boot_args_pa);
 #elif defined(CACTUS_STAGE78_NATIVE) && CACTUS_STAGE78_NATIVE
             mark(0x2800,0x1779340d044523adull,loaded_entry_pa,loaded_boot_args_pa);
 #elif defined(CACTUS_STAGE77_NATIVE) && CACTUS_STAGE77_NATIVE

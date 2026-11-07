@@ -20,3 +20,29 @@ Stage78 physically showed `ST78 mockfs cluster returned`, but the upper `vn_rdwr
 
 ## First hardware run
 Device serial `<REDACTED_DEVICE_SERIAL>` confirmed in fastboot. Flashed Stage79 using `shim/run-stage49.ps1 -Stage 79 -CaptureSeconds 60`; fastboot send, write, and reboot each returned **OKAY**. COM25 capture `../usb-captures/stage-cactus-20261107-020337-921/session-001-020348-093.bin`: 4,480 bytes, 80 valid frames, zero corrupt/noise, 10 missing sequence numbers. Stage79 XNU identity event `0x2800` (hash prefix `a0d33e9f8c73e9b4`) and native handoff `0x3500` (entry `0x8142c488`, boot_args `0x824c0000`) recorded. As with Stage78, USB logger ends at the transition: **new PID1 reading, Mach-O completion and userspace execution are not yet established by this trace**. The physical framebuffer's last Stage79 message is the next critical evidence.
+
+
+## Calamansi migration hardware replay — 7 November 2026
+
+- Calamansi main CI revision 6513f71f52d8a5210d22be55099108d4e488e8d4,
+  run 42378431656: SUCCESS for macOS XNU compilation and patch application.
+- Kernel from the new repository, 17,122,288 bytes, SHA256
+  32212e13ff1a92e30159396e57da008481d9759608666042676d47216be5d2d5;
+  differs slightly from the historical Cactarwin build.
+- Relocated payload SHA256 eafb3e41448cadb0724a666c87fbe3be01fcd90535f691c000b0819d07ca42e7.
+  All 41 opcode pins passed after auditing the changed C-prologue opcode at
+  physical 0x81abe5a4 (0x90ffae01).
+- Android boot v2 image generated with Calamansi source and verified external
+  Cactus recovery/init assets:
+  shim/out/cactus/cactus-trace-stage-79-boot.img
+  SHA256 6b592b2760feaa05c87f9634781d0357646be4db6d41c4fef74553bfe1c3d011,
+  size 45,506,560 bytes. Host image and kernel checks passed.
+- Connected Cactus device identified in fastboot. Flashing via Calamansi
+  shim/run-stage49.ps1 with explicit -Serial reported OKAY for send, write, reboot.
+- Capture (before making watcher output repository-relative):
+  F:/ROM/patching/redmi 6a xnu/usb-captures/stage-cactus-20261107-194556-449/session-001-194603-075.bin.
+  78 valid frames, zero bad, 12 sequence gaps, no duplicates or regressions.
+  Stage79 identity 0x2800 prefix 0x32212e13ff1a92e3; XNU handoff event 0x3500
+  confirms entry PA 0x8142c488 and boot_args PA 0x824c0000.
+- USB tracing covers shim-to-XNU handoff only. PID1 and posthandoff
+  framebuffer progress are still unconfirmed.

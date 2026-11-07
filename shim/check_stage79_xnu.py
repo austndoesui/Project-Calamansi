@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import adt
 import mkpayload
 
-HASH = "2c6cbde529f40f2d6a9e43b898cd6060b1033a5b3c8ca8a954179501ee5fcd4c"
+HASH = "eafb3e41448cadb0724a666c87fbe3be01fcd90535f691c000b0819d07ca42e7"
 INIT_HASH = "f0b8d9f4e5d841691efe23b1521e756b743665484be82b9e7082c71626e7fe5d"
 ENTRY = 0xFFFFFFF00742C488
 C_ENTRY = 0x81ABE57C
@@ -24,7 +24,7 @@ PINNED = {
     0x8142e3f4: 0xd5182020, 0x8142e43c: 0xd518a200,
     0x8142e494: 0xd5181000, 0x8142e498: 0xd5033fdf,
     0x81abe57c: 0xd10343ff, 0x81abe59c: 0x90000a68,
-    0x81abe5a4: 0xb0ffae01, 0x81abe5ac: 0x52800020,
+    0x81abe5a4: 0x90ffae01, 0x81abe5ac: 0x52800020,
     0x81abebac: 0xf9400108,
 }
 EARLY = (0xd510109f,0xd5034fdf,0xaa0003f4,0xd2800015,

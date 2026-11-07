@@ -2,7 +2,7 @@
 # One .bin file per USB attachment, preserving evidence across boot loops.
 param(
     [int]$Seconds = 0,
-    [string]$OutputRoot = 'F:\ROM\patching\redmi 6a xnu\usb-captures',
+    [string]$OutputRoot = (Join-Path (Split-Path $PSScriptRoot -Parent) 'usb-captures'),
     [int]$PollMilliseconds = 150,
     [string]$PortName = 'COM25',
     [switch]$SkipDecode
