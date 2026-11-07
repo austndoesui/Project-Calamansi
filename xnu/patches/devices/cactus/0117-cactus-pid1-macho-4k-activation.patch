@@ -1,0 +1,128 @@
+diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
+--- a/bsd/kern/kern_exec.c
++++ b/bsd/kern/kern_exec.c
+@@ -2298,6 +2298,9 @@
+ 	    &resid, vfs_context_proc(imgp->ip_vfs_context));
+ #if defined(CACTUS)
+     if (proc_pid(current_proc()) == 1) {
++		/* The two Stage81 VFS return markers were seen on hardware.
++		 * Capture the caller's exact result before any Mach-O work. */
++		fbcon_stage53_progress("ST82 PID1 exec read returned");
+         char status[96];
+         unsigned int magic = 0;
+         if (!error && resid < PAGE_SIZE) {
+@@ -2347,7 +2350,19 @@
+ 	}
+ 	error = -1;
+ 	for (i = 0; error == -1 && execsw[i].ex_imgact != NULL; i++) {
++		#if defined(CACTUS)
++		if (proc_pid(current_proc()) == 1)
++			fbcon_stage53_progress("ST82 PID1 image activator call");
++		#endif
+ 		error = (*execsw[i].ex_imgact)(imgp);
++		#if defined(CACTUS)
++		if (proc_pid(current_proc()) == 1) {
++			char cactus_status[80];
++			snprintf(cactus_status, sizeof(cactus_status),
++			    "ST82 PID1 activator #%d err=%d", i, error);
++			fbcon_stage53_progress(cactus_status);
++		}
++		#endif
+ 
+ 		switch (error) {
+ 		/* case -1: not claimed: continue */
+diff --git a/bsd/kern/mach_loader.c b/bsd/kern/mach_loader.c
+--- a/bsd/kern/mach_loader.c
++++ b/bsd/kern/mach_loader.c
+@@ -95,6 +95,20 @@
+ 
+ #include "kern_exec_internal.h"
+ 
++#if defined(CACTUS)
++extern void fbcon_stage53_progress(const char *);
++static void
++cactus_pid1_loader_status(const char *phase, int code)
++{
++	proc_t p = current_proc();
++	if (p != PROC_NULL && proc_pid(p) == 1) {
++		char status[80];
++		snprintf(status, sizeof(status), "ST82 %s=%d", phase, code);
++		fbcon_stage53_progress(status);
++	}
++}
++#endif
++
+ /* XXX should have prototypes in a shared header file */
+ extern int      get_map_nentries(vm_map_t);
+ 
+@@ -509,8 +523,19 @@
+ 
+ #if defined(__arm64__)
+ 	if (result->is_64bit_addr) {
++	#if defined(CACTUS)
++		/*
++		 * cactus is an ARM64 4 KiB-granule target.  The default iPhone
++		 * 16 KiB userspace map is incompatible with our 4 KiB pmap.
++		 * Keep Apple's normal loader and pager, but give PID1 a map
++		 * whose page granule agrees with its actual hardware pmap.
++		 */
++		vm_map_set_page_shift(map, FOURK_PAGE_SHIFT);
++		cactus_pid1_loader_status("PID1 map 4K", (int)vm_map_page_shift(map));
++	#else
+ 		/* enforce 16KB alignment of VM map entries */
+ 		vm_map_set_page_shift(map, SIXTEENK_PAGE_SHIFT);
++	#endif
+ 	} else {
+ 		vm_map_set_page_shift(map, page_shift_user32);
+ 	}
+@@ -578,6 +603,9 @@
+ 	lret = parse_machfile(vp, map, thread, header, file_offset, macho_size,
+ 	    0, aslr_page_offset, dyld_aslr_page_offset, result,
+ 	    NULL, imgp);
++#if defined(CACTUS)
++	cactus_pid1_loader_status("PID1 parse MachO", lret);
++#endif
+ 
+ 	if (lret != LOAD_SUCCESS) {
+ 		vm_map_deallocate(map); /* will lose pmap reference too */
+@@ -890,6 +918,9 @@
+ 	 *	Get the pager for the file.
+ 	 */
+ 	control = ubc_getobject(vp, UBC_FLAGS_NONE);
++#if defined(CACTUS)
++	cactus_pid1_loader_status("PID1 UBC object", control != NULL);
++#endif
+ 
+ 	/* ensure header + sizeofcmds falls within the file */
+ 	if (os_add_overflow(mach_header_sz, header->sizeofcmds, &cmds_size) ||
+@@ -909,6 +940,10 @@
+ 
+ 	error = vn_rdwr(UIO_READ, vp, addr, (int)alloc_size, file_offset,
+ 	    UIO_SYSSPACE, 0, vfs_context_ucred(imgp->ip_vfs_context), &resid, p);
++#if defined(CACTUS)
++	cactus_pid1_loader_status("PID1 cmds read", error);
++	cactus_pid1_loader_status("PID1 cmds resid", resid);
++#endif
+ 	if (error) {
+ 		kfree_data(addr, alloc_size);
+ 		return LOAD_IOERROR;
+@@ -1151,6 +1186,9 @@
+ 				    slide,
+ 				    result,
+ 				    imgp);
++#if defined(CACTUS)
++				cactus_pid1_loader_status("PID1 segment32", ret);
++#endif
+ 				if (ret == LOAD_SUCCESS && scp->fileoff == 0 && scp->filesize > 0) {
+ 					/* Enforce a single segment mapping offset zero, with R+X
+ 					 * protection. */
+@@ -1205,6 +1243,9 @@
+ 				    slide,
+ 				    result,
+ 				    imgp);
++#if defined(CACTUS)
++				cactus_pid1_loader_status("PID1 segment64", ret);
++#endif
+ 
+ 				if (ret == LOAD_SUCCESS && scp64->fileoff == 0 && scp64->filesize > 0) {
+ 					/* Enforce a single segment mapping offset zero, with R+X

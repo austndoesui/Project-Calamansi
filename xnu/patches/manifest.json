@@ -827,6 +827,13 @@
       "source": "xnu/patches/devices/cactus/0116-cactus-pid1-return-console-fix.patch",
       "upstream_name": "0116-cactus-pid1-return-console-fix-stage81.patch",
       "sha256": "eb4840e1439a06f00b42676010a72aea1530e0c141041d640317d32e90171daa"
+    },
+    {
+      "order": 117,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0117-cactus-pid1-macho-4k-activation.patch",
+      "upstream_name": "0117-cactus-pid1-macho-4k-activation-stage82.patch",
+      "sha256": "b3ba21c8c7b275f8c95103a248e8d5aa61fc1ce849ea34d29b760ddf8ac89521"
     }
   ]
 }
