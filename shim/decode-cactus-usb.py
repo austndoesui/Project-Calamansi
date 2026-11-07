@@ -97,14 +97,14 @@ def inspect_stage49(records, stage=49):
                      57: 0x81AC33C8, 58: 0x81AC36F8, 59: 0x81AC37D8, 60: 0x81AC38F8,
                      61: 0x81AC3908, 62: 0x81AC3908, 63: 0x81AC3998,
                      64: 0x81AC3998, 65: 0x81AC3BB8, 66: 0x81AC3BB8,
-                     67: 0x81AC3D48, 68: 0x81AC3E68, 69: 0x81AC4068, 70: 0x81AC4028, 71: 0x81AC3E88, 72: 0x81AC3E68, 73: 0x81AC3EA8, 74: 0x81AC4028, 75: 0x81AC4348, 76: 0x81AC4368, 77: 0x81AC4488, 78: 0x81ABEA6C, 79: 0x81ABEBAC, 80: 0x81ABFAFC}.get(stage, 0x81AC0C68)
+                     67: 0x81AC3D48, 68: 0x81AC3E68, 69: 0x81AC4068, 70: 0x81AC4028, 71: 0x81AC3E88, 72: 0x81AC3E68, 73: 0x81AC3EA8, 74: 0x81AC4028, 75: 0x81AC4348, 76: 0x81AC4368, 77: 0x81AC4488, 78: 0x81ABEA6C, 79: 0x81ABEBAC, 80: 0x81ABFAFC, 81: 0x81ABFB6C}.get(stage, 0x81AC0C68)
     checkpoint_opcode = ({52: 0xB0FFB5A8,
                           53: 0xD0FFB5A8, 54: 0xB0FFB5A8,
                           55: 0xB0FFB5A8, 56: 0xB0FFB5A8,
                           57: 0xB0FFB5A8, 58: 0xB0FFB5A8, 59: 0xB0FFB5A8, 60: 0xB0FFB5A8,
                           61: 0xB0FFB5A8, 62: 0xB0FFB5A8, 63: 0xB0FFB5A8,
                           64: 0xB0FFB5A8, 65: 0xB0FFB5A8, 66: 0xB0FFB5A8,
-                          67: 0xB0FFB5A8, 68: 0xB0FFB5A8, 69: 0x90FFB5A8, 70: 0x90FFB5A8, 71: 0xB0FFB5A8, 72: 0xB0FFB5A8, 73: 0xB0FFB5A8, 74: 0x90FFB5A8, 75: 0x90FFB5A8, 76: 0x90FFB5A8, 77: 0x90FFB5A8, 78: 0xF9400108, 79: 0xF9400108, 80: 0xF9400108}.get(stage, 0x90FFB5C8))
+                          67: 0xB0FFB5A8, 68: 0xB0FFB5A8, 69: 0x90FFB5A8, 70: 0x90FFB5A8, 71: 0xB0FFB5A8, 72: 0xB0FFB5A8, 73: 0xB0FFB5A8, 74: 0x90FFB5A8, 75: 0x90FFB5A8, 76: 0x90FFB5A8, 77: 0x90FFB5A8, 78: 0xF9400108, 79: 0xF9400108, 80: 0xF9400108, 81: 0xF9400108}.get(stage, 0x90FFB5C8))
     kernel_markers = {51: 0x40F672D3500699B6, 52: 0x945E61817C333218,
                       53: 0x361846AAB01F8040, 54: 0xED5123CEE5377846,
                       55: 0xEA16FAA6D49EB135, 56: 0x3004D4478977B6B2,
@@ -113,10 +113,10 @@ def inspect_stage49(records, stage=49):
                       61: 0x15FDBDAB0AA0CB1F, 62: 0x15FDBDAB0AA0CB1F,
                       63: 0xC9B059C9DAD73F49, 64: 0xC9B059C9DAD73F49,
                       65: 0x8B9D47E456C92F59, 66: 0x9F76552002E5BA8F,
-                      67: 0x5FDE9842617A904D, 68: 0xDF201510EDFDA5E2, 69: 0xC2A15E3BCCA44E1A, 70: 0xC9645C067882397D, 71: 0xEAD2AC800BAC9452, 72: 0x3B1AE5E7F1BA8C76, 73: 0xD5063F7F09BB5A51, 74: 0x611FC800ACD2B829, 75: 0xFD4D640BC716F1A7, 76: 0x7316640649E655D6, 77: 0x60D31B08A485278C, 78: 0x1779340D044523AD, 79: 0x32212E13FF1A92E3, 80: 0xAF41E570707774FB}
+                      67: 0x5FDE9842617A904D, 68: 0xDF201510EDFDA5E2, 69: 0xC2A15E3BCCA44E1A, 70: 0xC9645C067882397D, 71: 0xEAD2AC800BAC9452, 72: 0x3B1AE5E7F1BA8C76, 73: 0xD5063F7F09BB5A51, 74: 0x611FC800ACD2B829, 75: 0xFD4D640BC716F1A7, 76: 0x7316640649E655D6, 77: 0x60D31B08A485278C, 78: 0x1779340D044523AD, 79: 0x32212E13FF1A92E3, 80: 0xAF41E570707774FB, 81: 0xC38D4EBDA19C6693}
     if stage in kernel_markers and kernel_identity["a"] != kernel_markers[stage]:
         return False, f"Stage{stage} trace did not identify the rebuilt XNU kernel"
-    if stage in (62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80):
+    if stage in (62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80 or args.require_stage81):
         # Read-only physical identity snapshot, recorded before the risky
         # native pe_init_fiq() mapping. Missing frames are an incomplete
         # capture, not evidence of zero-valued hardware registers.
@@ -155,7 +155,7 @@ def inspect_stage49(records, stage=49):
                 written[0][1]["b"] == 0xFFFF00FF and
                 written[0][1]["c"] == 1):
             return False, "guard allowed framebuffer test but readback failed"
-        if stage in (50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80):
+        if stage in (50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80 or args.require_stage81):
             redirect = by_event.get(0x5000, [])
             if not (len(redirect) == 1 and
                     by_event[0x4902][0][0] < redirect[0][0] <
@@ -165,7 +165,7 @@ def inspect_stage49(records, stage=49):
                      redirect[0][1]["c"]) ==
                     (0x5E605000, 0x7F4DB000, 1)):
                 return False, "XNU Video boot-args redirection missing or incorrect"
-            if stage in (51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80):
+            if stage in (51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80 or args.require_stage81):
                 console = by_event.get(0x5100, [])
                 if not (len(console) == 1 and
                         redirect[0][0] < console[0][0] <
@@ -174,12 +174,12 @@ def inspect_stage49(records, stage=49):
                         console[0][1]["b"] != 0 and
                         44 <= console[0][1]["c"] <= 65536):
                     return False, "Stage51 console payload prehandoff marker missing"
-                if stage in (52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80):
+                if stage in (52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80 or args.require_stage81):
                     tag = {52: 0x5200, 53: 0x5300, 54: 0x5400,
                            55: 0x5500, 56: 0x5600, 57: 0x5700,
                            58: 0x5800, 59: 0x5900, 60: 0x6000, 61: 0x6100,
                            62: 0x6100, 63: 0x6100, 64: 0x6100, 65: 0x6100,
-                           66: 0x6100, 67: 0x6100, 68: 0x6100, 69: 0x6100, 70: 0x6100, 71: 0x6100, 72: 0x6100, 73: 0x6100, 74: 0x6100, 75: 0x6100, 76: 0x6100, 77: 0x6100, 78: 0x6100, 79: 0x6100, 80: 0x6100}[stage]
+                           66: 0x6100, 67: 0x6100, 68: 0x6100, 69: 0x6100, 70: 0x6100, 71: 0x6100, 72: 0x6100, 73: 0x6100, 74: 0x6100, 75: 0x6100, 76: 0x6100, 77: 0x6100, 78: 0x6100, 79: 0x6100, 80: 0x6100, 81: 0x6100}[stage]
                     expected_entry = 0x81430488 if stage == 52 else 0x8142D488
                     diag = by_event.get(tag, [])
                     if not (len(diag) == 1 and
@@ -310,6 +310,8 @@ def main():
                         help="validate Stage79 virtual RAMDisk vnode read fix")
     parser.add_argument("--require-stage80", action="store_true",
                         help="validate Stage80 Calamansi framebuffer and minimal PID1 path")
+    parser.add_argument("--require-stage81", action="store_true",
+                        help="validate Stage81 Calamansi event ring and PID1 VFS return")
     parser.add_argument("--early-level", type=int, choices=[1, 2, 3, 4], default=1,
                         help="expected Stage 15 early diagnostic level")
     parser.add_argument("--show", type=int, default=15)
@@ -344,7 +346,7 @@ def main():
             or args.require_stage58 or args.require_stage59 or args.require_stage60
             or args.require_stage61 or args.require_stage62 or args.require_stage63
             or args.require_stage64 or args.require_stage65 or args.require_stage66
-            or args.require_stage67 or args.require_stage68 or args.require_stage69 or args.require_stage70 or args.require_stage71 or args.require_stage72 or args.require_stage73 or args.require_stage74 or args.require_stage75 or args.require_stage76 or args.require_stage77 or args.require_stage78 or args.require_stage79 or args.require_stage80):
+            or args.require_stage67 or args.require_stage68 or args.require_stage69 or args.require_stage70 or args.require_stage71 or args.require_stage72 or args.require_stage73 or args.require_stage74 or args.require_stage75 or args.require_stage76 or args.require_stage77 or args.require_stage78 or args.require_stage79 or args.require_stage80 or args.require_stage81):
         stage = (56 if args.require_stage56 else (55 if args.require_stage55 else
                  (54 if args.require_stage54 else
                  (53 if args.require_stage53 else (52 if args.require_stage52 else
@@ -397,6 +399,8 @@ def main():
             stage = 79
         if args.require_stage80:
             stage = 80
+        if args.require_stage81:
+            stage = 81
         good, result = inspect_stage49(records, stage)
         no_loss = not (corrupt or noise or gaps or duplicates or regressions)
         good = good and no_loss and all(r["stage"] == stage for r in records)

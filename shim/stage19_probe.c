@@ -295,7 +295,10 @@ static uint64_t loaded_entry_pa, loaded_boot_args_pa;
 #define STAGE20B_RESTORE_EVENT 0x220bu
 #define STAGE22_TARGET_VA 0xfffffff007ac0c20ull
 #else
-#if defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+#if defined(CACTUS_STAGE81_NATIVE) && CACTUS_STAGE81_NATIVE
+#define STAGE20B_TARGET 0x81abfb6cull
+#define STAGE20B_ORIG 0xf9400108u
+#elif defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
 #define STAGE20B_TARGET 0x81abfafcull
 #define STAGE20B_ORIG 0xf9400108u
 #elif defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
@@ -671,7 +674,13 @@ static int stage20b_arm(void)
         {0x8142e43cull,0xd518a200u},
         {0x8142e494ull,0xd5181000u},
         {0x8142e498ull,0xd5033fdfu},
-#if defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+#if defined(CACTUS_STAGE81_NATIVE) && CACTUS_STAGE81_NATIVE
+        {0x81abf53cull,0xd10343ffu},
+        {0x81abf55cull,0xf0000a68u},
+        {0x81abf564ull,0xf0ffade1u},
+        {0x81abf56cull,0x52800020u},
+        {0x81abfb6cull,0xf9400108u},
+#elif defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
         {0x81abf4ccull,0xd10343ffu},
         {0x81abf4ecull,0xf0000a68u},
         {0x81abf4f4ull,0xf0ffade1u},
@@ -1385,7 +1394,10 @@ static void stage45_scanout_probe(uintptr_t dtb)
 #if defined(CACTUS_STAGE48_RUN) && CACTUS_STAGE48_RUN
     /* Last known Stage47 artificial checkpoint must remain untouched. */
     const uintptr_t stage48_pa=
-#if defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+#if defined(CACTUS_STAGE81_NATIVE) && CACTUS_STAGE81_NATIVE
+        0x81abfb6cull;
+    const uint32_t stage48_expected=0xf9400108u;
+#elif defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
         0x81abfafcull;
     const uint32_t stage48_expected=0xf9400108u;
 #elif defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
@@ -1845,7 +1857,9 @@ void stage19_probe(uintptr_t dtb)
             mark(0x2303,loaded_entry_pa,loaded_boot_args_pa,
                  STAGE22_TARGET_VA);
 #if defined(CACTUS_STAGE28_FIX) && CACTUS_STAGE28_FIX
-#if defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+#if defined(CACTUS_STAGE81_NATIVE) && CACTUS_STAGE81_NATIVE
+            mark(0x2800,0xc38d4ebda19c6693ull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
             mark(0x2800,0xaf41e570707774fbull,loaded_entry_pa,loaded_boot_args_pa);
 #elif defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
             mark(0x2800,0x32212e13ff1a92e3ull,loaded_entry_pa,loaded_boot_args_pa);
