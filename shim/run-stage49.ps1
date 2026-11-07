@@ -2,7 +2,7 @@
 param(
     [int]$CaptureSeconds = 60,
     [Parameter(Mandatory=$true)][string]$Serial,
-    [ValidateSet(49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82)][int]$Stage = 49
+    [ValidateSet(49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83)][int]$Stage = 49
 )
 $ErrorActionPreference = 'Stop'
 if ($CaptureSeconds -lt 30) { throw 'CaptureSeconds must be at least 30' }
