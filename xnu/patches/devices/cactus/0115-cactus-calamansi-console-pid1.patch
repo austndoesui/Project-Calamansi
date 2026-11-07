@@ -1,0 +1,228 @@
+diff --git a/pexpert/arm/pe_serial.c b/pexpert/arm/pe_serial.c
+--- a/pexpert/arm/pe_serial.c
++++ b/pexpert/arm/pe_serial.c
+@@ -720,8 +720,11 @@
+ #define FBCON_SCALE     2
+ #endif
+ #if defined(CACTUS)
+-/* Rows [0, 7) always belong to the native Cactarwin status header. */
++/* Fixed header plus persistent bottom event panel on cactus. */
+ #define FBCON_HEADER_ROWS 8u
++#define FBCON_EVENT_ROWS 12u
++#define FBCON_PANEL_ROWS (FBCON_EVENT_ROWS + 4u)
++#define FBCON_EVENT_CHARS 68u
+ #endif
+ #define FBCON_FG        0xffffffffu
+ #define FBCON_BG        0xff000000u
+@@ -730,7 +733,17 @@
+ static uint32_t fbcon_width, fbcon_height, fbcon_stride;
+ static uint32_t fbcon_cols, fbcon_rows, fbcon_col, fbcon_row;
+ static uint32_t fbcon_log_first_row;
++static uint32_t fbcon_log_end_row;
+ static void fbcon_transmit_data(uint8_t c);
++#if defined(CACTUS)
++static char calamansi_events[FBCON_EVENT_ROWS][FBCON_EVENT_CHARS];
++static char calamansi_last_error[FBCON_EVENT_CHARS];
++static uint32_t calamansi_event_sequence;
++static uint32_t calamansi_event_count;
++static uint32_t calamansi_event_pos;
++static volatile uint32_t calamansi_panel_busy;
++static void calamansi_panel_redraw(void);
++#endif
+ #if defined(CACTUS)
+ static void cactus_pid1_bar_draw(void);
+ #endif
+@@ -760,12 +773,12 @@
+ {
+ 	fbcon_col = 0;
+ 	fbcon_row++;
+-	if (fbcon_row >= fbcon_rows) {
++	if (fbcon_row >= fbcon_log_end_row) {
+ 		fbcon_row = fbcon_log_first_row;
+ 	}
+ 	fbcon_clear_row(fbcon_row);
+ 	uint32_t next_row = fbcon_row + 1;
+-	if (next_row >= fbcon_rows) {
++	if (next_row >= fbcon_log_end_row) {
+ 		next_row = fbcon_log_first_row;
+ 	}
+ 	fbcon_clear_row(next_row);
+@@ -778,25 +791,28 @@
+ 	fbcon_rows = fbcon_height / (16 * FBCON_SCALE);
+ 	fbcon_col = fbcon_row = 0;
+ 	fbcon_log_first_row = 0;
++	fbcon_log_end_row = fbcon_rows;
+ 	for (uint32_t r = 0; r < fbcon_rows; r++) {
+ 		fbcon_clear_row(r);
+ 	}
+ #if defined(CACTUS)
+-	/* The reserved PID1 row now occupies the topmost visible scanline. */
+-	if (fbcon_rows > FBCON_HEADER_ROWS + 4) {
+-		fbcon_row = 1; /* Keep the colored strip above Cactarwin banner. */
+-		fbcon_literal("=== [ Cactarwin / Cactus-XNU ] ===\n");
+-		fbcon_literal("PROJECT  Cactarwin (cactus-xnu)\n");
++	/* Keep the PID1 bar and reserve a fixed recent-events panel below logs. */
++	if (fbcon_rows > FBCON_HEADER_ROWS + FBCON_PANEL_ROWS + 4) {
++		fbcon_row = 1; /* Keep the colored strip above the Calamansi title. */
++		fbcon_literal("=== [ Project Calamansi / XNU ] ===\n");
++		fbcon_literal("PROJECT  Calamansi (cactus / MT6765)\n");
+ 		fbcon_literal("DEVICE   Xiaomi Redmi 6A (cactus)\n");
+ 		fbcon_literal("DISPLAY  720x1440 framebuffer\n");
+ 		fbcon_literal("--------------------------------\n");
+ 		fbcon_literal("STATUS   Native XNU startup\n");
+ 		fbcon_literal("--------------------------------\n");
+ 		fbcon_log_first_row = FBCON_HEADER_ROWS;
++		fbcon_log_end_row = fbcon_rows - FBCON_PANEL_ROWS;
+ 		fbcon_col = 0;
+ 		fbcon_row = FBCON_HEADER_ROWS;
+ 		fbcon_clear_row(fbcon_row);
+ 		cactus_pid1_bar_draw();
++		calamansi_panel_redraw();
+ 	}
+ #endif
+ }
+@@ -876,10 +892,95 @@
+ }
+ 
+ /*
+- * Update the fixed status line without allocating, printing or taking a
+- * lock. Called during single-CPU kernel bringup before threaded logging.
+- * Restores the scroll cursor so normal output continues uninterrupted.
+- */
++ * Ring of the last twelve native XNU checkpoints. No allocations, no
++ * spinlocks, no USB dependency. Always render the newest event at the bottom,
++ * while the normal XNU serial console wraps ABOVE the fixed panel.
++ */
++static int
++calamansi_contains(const char *haystack, const char *needle)
++{
++    for (; *haystack; haystack++) {
++        const char *a = haystack, *b = needle;
++        while (*a && *b && *a == *b) { a++; b++; }
++        if (!*b) return 1;
++    }
++    return 0;
++}
++
++static void
++calamansi_panel_line(uint32_t row, const char *prefix, const char *msg)
++{
++    fbcon_clear_row(row);
++    fbcon_row = row;
++    fbcon_col = 0;
++    fbcon_literal(prefix);
++    if (msg != NULL) {
++        while (*msg && fbcon_col + 1 < fbcon_cols) {
++            fbcon_transmit_data((uint8_t)*msg++);
++        }
++    }
++}
++
++static void
++calamansi_panel_redraw(void)
++{
++    if (fbcon_log_end_row <= FBCON_HEADER_ROWS ||
++        fbcon_log_end_row + FBCON_PANEL_ROWS > fbcon_rows ||
++        calamansi_panel_busy) return;
++    calamansi_panel_busy = 1;
++    const uint32_t old_row = fbcon_row, old_col = fbcon_col;
++    uint32_t base = fbcon_log_end_row;
++    calamansi_panel_line(base, "------ CALAMANSI | LIVE XNU EVENTS ------", NULL);
++    uint32_t newest = (calamansi_event_pos + FBCON_EVENT_ROWS - 1u)
++        % FBCON_EVENT_ROWS;
++    calamansi_panel_line(base + 1u, "LAST   ",
++        calamansi_event_count ? calamansi_events[newest] : "waiting for XNU");
++    calamansi_panel_line(base + 2u, "ERROR  ",
++        calamansi_last_error[0] ? calamansi_last_error : "none");
++    calamansi_panel_line(base + 3u, "SEQ    newest event is at the bottom", NULL);
++    for (uint32_t i = 0; i < FBCON_EVENT_ROWS; i++) {
++        uint32_t skip = FBCON_EVENT_ROWS - calamansi_event_count;
++        const char *msg = NULL;
++        if (i >= skip) {
++            uint32_t slot = (calamansi_event_pos + i) % FBCON_EVENT_ROWS;
++            msg = calamansi_events[slot];
++        }
++        calamansi_panel_line(base + 4u + i, msg ? " > " : "   ", msg);
++    }
++    fbcon_row = old_row;
++    fbcon_col = old_col;
++    calamansi_panel_busy = 0;
++}
++
++static void
++calamansi_append_event(const char *message)
++{
++    char *dest = calamansi_events[calamansi_event_pos];
++    uint32_t i = 0;
++    while (i + 1u < FBCON_EVENT_CHARS && message[i]) {
++        dest[i] = message[i];
++        i++;
++    }
++    dest[i] = 0;
++    if (calamansi_contains(dest, "ERROR") ||
++        calamansi_contains(dest, "failed") ||
++        calamansi_contains(dest, "FAILED") ||
++        calamansi_contains(dest, "panic") ||
++        calamansi_contains(dest, "timeout")) {
++        uint32_t n = 0;
++        while (n + 1u < FBCON_EVENT_CHARS && dest[n]) {
++            calamansi_last_error[n] = dest[n];
++            n++;
++        }
++        calamansi_last_error[n] = 0;
++    }
++    calamansi_event_pos = (calamansi_event_pos + 1u) % FBCON_EVENT_ROWS;
++    if (calamansi_event_count < FBCON_EVENT_ROWS)
++        calamansi_event_count++;
++    calamansi_event_sequence++;
++}
++
++/* Every checkpoint remains visible in the ring and updates the status. */
+ void
+ fbcon_stage53_progress(const char *message)
+ {
+@@ -900,6 +1001,8 @@
+     }
+     fbcon_row = old_row;
+     fbcon_col = old_col;
++    calamansi_append_event(message);
++    calamansi_panel_redraw();
+ }
+ #endif
+ 
+diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
+--- a/bsd/kern/kern_exec.c
++++ b/bsd/kern/kern_exec.c
+@@ -2312,13 +2312,31 @@
+ 	if (error) {
+ 		goto bad;
+ 	}
++#if defined(CACTUS)
++    /*
++     * PID1 must be a complete little-endian arm64 Mach-O. Validate its
++     * 32-byte mach_header_64 before asking XNU's normal image activator
++     * to map the executable. Keep standard policy and loader behavior.
++     */
++    if (proc_pid(current_proc()) == 1) {
++        unsigned int mach_magic = 0;
++        if (resid < PAGE_SIZE && PAGE_SIZE - resid >= 4)
++            memcpy(&mach_magic, imgp->ip_vdata, sizeof(mach_magic));
++        if (resid > PAGE_SIZE - 32 || mach_magic != 0xfeedfacfu) {
++            fbcon_stage53_progress("ST80 PID1 malformed MachO header");
++            error = EBADEXEC;
++            goto bad;
++        }
++        fbcon_stage53_progress("ST80 PID1 MachO header valid");
++    }
++#endif
+ 
+ 	if (resid) {
+ 		memset(imgp->ip_vdata + (PAGE_SIZE - resid), 0x0, resid);
+ 	}
+ #if defined(CACTUS)
+     if (proc_pid(current_proc()) == 1)
+-        fbcon_stage53_progress("ST78 MachO activator enter");
++        fbcon_stage53_progress("ST80 PID1 MachO loader entered");
+ #endif
+ 
+ encapsulated_binary:

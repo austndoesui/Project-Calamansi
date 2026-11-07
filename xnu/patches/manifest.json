@@ -813,6 +813,13 @@
       "source": "xnu/patches/devices/cactus/0114-cactus-mockfs-vnode-read.patch",
       "upstream_name": "0114-cactus-mockfs-vnode-read-stage79.patch",
       "sha256": "3ace18782b90c5b2cf41aafd3931d90f5fdfa9dc458c2481124b50b547adab3c"
+    },
+    {
+      "order": 115,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0115-cactus-calamansi-console-pid1.patch",
+      "upstream_name": "0115-cactus-calamansi-console-pid1-stage80.patch",
+      "sha256": "0f94a9251cc06ec6482a03df68e3bdbae6c1ab55f1e19a934d30ca8280488fde"
     }
   ]
 }

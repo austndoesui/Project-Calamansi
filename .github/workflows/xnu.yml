@@ -143,6 +143,7 @@ jobs:
               '0112-cactus-pid1-wired-exec-stage77.patch',
               '0113-cactus-pid1-header-trace-stage78.patch',
               '0114-cactus-mockfs-vnode-read-stage79.patch',
+              '0115-cactus-calamansi-console-pid1-stage80.patch',
           )
           failures = []
           for name in required:
