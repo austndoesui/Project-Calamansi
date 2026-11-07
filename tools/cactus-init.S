@@ -15,12 +15,19 @@ _start:
     and x9, x9, #~15
     mov sp, x9
 
+    /* Verify EL0 with the very first syscall. The framebuffer green bar
+     * is set by XNU's PID1 getpid implementation, independently of devfs. */
+    mov x16, #SYS_getpid
+    svc #0x80
+    mov x20, x0
+    mov x19, #-1
+
     adr x0, console_path
     mov x1, #O_RDWR
     mov x2, #0
     mov x16, #SYS_open
     svc #0x80
-    b.cs park
+    b.cs no_console
     mov x19, x0
 
     adr x1, greeting
@@ -28,9 +35,7 @@ _start:
     sub x2, x2, x1
     bl print
 
-    mov x16, #SYS_getpid
-    svc #0x80
-    add w0, w0, #'0'
+    add w0, w20, #'0'
     sub sp, sp, #16
     strb w0, [sp]
     mov x1, sp
@@ -43,7 +48,11 @@ _start:
     sub x2, x2, x1
     bl print
 
+no_console:
 loop:
+    /* Keep the PID1 proof alive even without a functioning console. */
+    mov x16, #SYS_getpid
+    svc #0x80
     mov x0, #0
     mov x1, #0
     mov x2, #0
@@ -58,12 +67,13 @@ loop:
     b loop
 
 print:
+    cmp x19, #0
+    b.lt print_done
     mov x0, x19
     mov x16, #SYS_write
     svc #0x80
+print_done:
     ret
-park:
-    b park
 
     .p2align 3
 five_seconds:

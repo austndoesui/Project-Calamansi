@@ -163,6 +163,7 @@ jobs:
               '0116-cactus-pid1-return-console-fix-stage81.patch',
               '0117-cactus-pid1-macho-4k-activation-stage82.patch',
               '0118-cactus-pid1-postparse-pagein-stage83.patch',
+              '0119-cactus-pid1-exec-handoff-stage84.patch',
           )
           failures = []
           for name in required:

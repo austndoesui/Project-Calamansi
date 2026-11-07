@@ -841,6 +841,13 @@
       "source": "xnu/patches/devices/cactus/0118-cactus-pid1-postparse-pagein.patch",
       "upstream_name": "0118-cactus-pid1-postparse-pagein-stage83.patch",
       "sha256": "23c068d27541c8a0dc3daef8611ec8b06ef174f764df38febd750f0084b27538"
+    },
+    {
+      "order": 119,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0119-cactus-pid1-exec-handoff-stage84.patch",
+      "upstream_name": "0119-cactus-pid1-exec-handoff-stage84.patch",
+      "sha256": "3cbe02c18af3522a48d780219bd3b09db2be35643fcedc00822ad97a301badd4"
     }
   ]
 }
