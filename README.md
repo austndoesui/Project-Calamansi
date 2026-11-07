@@ -8,7 +8,7 @@
 <p align="center">
   <img alt="Platform" src="https://img.shields.io/badge/platform-MT6761%20%2F%20MT6765-343434?style=flat-square">
   <img alt="Kernel" src="https://img.shields.io/badge/kernel-XNU-343434?style=flat-square">
-  <img alt="Status" src="https://img.shields.io/badge/status-early%20bring--up-e9a23b?style=flat-square">
+  <img alt="Status" src="https://img.shields.io/badge/cactus-native%20XNU%20%2B%20PID1%20syscall%20verified-168c43?style=flat-square">
   <img alt="Devices" src="https://img.shields.io/badge/devices-cactus%20%7C%20CPH2179-497b70?style=flat-square">
 </p>
 
@@ -26,7 +26,7 @@ The first bring-up target is the **Xiaomi Redmi 6A (`cactus`)**. **`CPH2179`** i
 | Component | Role | State |
 | --- | --- | --- |
 | **Boot shim** | Starts from the device's Android boot chain, prepares memory and hands control to XNU. | Hardware-proven on `cactus`; device-generalization planned. |
-| **XNU kernel** | Apple's open-source kernel with MediaTek and board adaptation patches. | Native execution proven on `cactus`; full userspace boot unproven. |
+| **XNU kernel** | Apple's open-source kernel with MediaTek and board adaptation patches. | Native execution, BSD initialization and a minimal PID 1 userspace syscall hardware-verified on `cactus`; full iOS userspace remains unproven. |
 | **Hardware description** | Apple Device Tree, memory and interrupt mappings, framebuffer and per-board parameters. | Existing cactus work; per-device profiles planned. |
 | **Diagnostics** | Native framebuffer output, USB serial trace capture, and host-side validators. | Used in cactus bring-up; device-specific transport support varies. |
 
@@ -40,10 +40,10 @@ Stock bootloader / LK
           ├─ USB / framebuffer diagnostics (where implemented)
           └─ Native XNU kernel
               └─ BSD, root filesystem and executable loading
-                  └─ PID 1 / userspace (not yet confirmed)
+                  └─ Minimal PID 1 (EL0 / getpid syscall verified on cactus)
 ```
 
-This diagram describes the intended flow. The exact boot path and working peripherals differ by device.
+This flow through the first PID 1 syscall is hardware-verified on `cactus` using a minimal custom ARM64 executable. The exact boot path and working peripherals differ by device.
 
 ## Current status
 
@@ -53,11 +53,14 @@ This diagram describes the intended flow. The exact boot path and working periph
 | Native XNU entry | **Verified** | Not yet documented here |
 | On-device framebuffer console | **Verified** | Not yet documented here |
 | USB debug capture | **Verified before XNU handoff** | Not yet documented here |
-| BSD / root filesystem bring-up | **Reached executable-read investigation** | Not yet documented here |
-| PID 1 userspace execution | **Not confirmed** | Not yet documented here |
+| BSD / root filesystem bring-up | **Verified through PID 1 executable loading and `execve` completion** | Not yet documented here |
+| PID 1 userspace execution | **Verified: EL0 SVC64 + `getpid()`; green PID1 bar** | Not yet documented here |
+| dyld / launchd / iOS userspace | **Not verified** | Not yet documented here |
 | Functional iOS / SpringBoard | **Not available** | **Not available** |
 
-**Latest verified cactus checkpoint (7 November 2026):** the Stage 79 kernel was built and flashed. The host trace confirms its identity and native XNU handoff; the USB trace ends at handoff and cannot establish PID 1 execution. On Stage 78, a framebuffer checkpoint showed `mockfs` returning from `cluster_read()`. Stage 79 introduced a separate virtual-RAMDisk read path, but a post-handoff framebuffer result has not yet been established.
+**Latest verified cactus checkpoint (8 November 2026, Stage 85):** the kernel and getpid-first minimal ARM64 init were built, verified and flashed to a Redmi 6A. Native framebuffer evidence confirms executable page-in, Mach-O activation (`err=0`), task switch, signature processing, `execve` success and return, then **a real EL0 SVC64 exception**: `ST85 EL0 ec=15 esr=56000080 far=0 pc=100000414`. The device owner observed the **green `PID1 RUNNING` indicator**, which the kernel sets only when process 1 executes its `getpid()` syscall. This establishes the first confirmed native PID 1 userspace execution on `cactus`.
+
+The Stage 85 COM25 prehandoff capture independently confirmed the expected kernel identity and XNU native entry; USB logging stops at handoff, so the **on-device framebuffer** is the evidence for userspace execution. This milestone demonstrates a minimal, static, custom PID 1 program; continued userspace services, dyld, launchd, SpringBoard and a functional iOS environment are **not yet verified**. Preserve Stage 85 as the known-good baseline. See [Stage 85 device evidence](docs/devices/cactus/STAGE85-PID1-STACK-EXEC-FAULT.md).
 
 Device results should be recorded separately; success on one MT6765-family board does not imply that another board will boot.
 

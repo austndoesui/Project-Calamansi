@@ -6,7 +6,7 @@ Project Calamansi brings the open-source XNU kernel to the **MediaTek MT6761/MT6
 
 ## Start here
 
-1. Read `README.md`, the target device's `devices/<device>/README.md`, and the latest test record for that device. Cactus hardware evidence is in `docs/devices/cactus/`, including Stage79.
+1. Read `README.md`, the target device's `devices/<device>/README.md`, and the latest test record for that device. Cactus hardware evidence is in `docs/devices/cactus/`, including the Stage85 native PID1 syscall milestone.
 2. Inspect `git status`, the current branch and the patch manifest before editing. Keep unrelated user changes untouched.
 3. Identify whether a change belongs to shared XNU, the MT6765 platform, a particular device, or the host toolchain. Never infer scope from an old filename alone.
 4. State the evidence for hardware claims: local build, offline test, actual fastboot flash, USB handoff, native framebuffer and userspace entry are separate outcomes.
@@ -50,5 +50,5 @@ The existing `shim/` implementation remains cactus-specific until independently 
 ## Historical baseline
 
 - Prior source: `austndoesui/Cactarwin`, branch `stage61-cactus-gicr-id-guard`, includes cactus Stage 79 patch `0114-cactus-mockfs-vnode-read-stage79.patch`.
-- Current proven cactus boundary: native Stage 79 XNU handoff; PID 1 userspace execution remains unconfirmed.
+- Current proven cactus boundary (8 November 2026): Stage85 native XNU, BSD/`execve`, EL0 and PID1 `getpid()` syscall verified on hardware; green `PID1 RUNNING` framebuffer indicator. Preserve Stage85 as the known-good baseline. No dyld, launchd, SpringBoard or functional iOS boot verified.
 - Calamansi branches `main`, `generic`, `Cactus`, `cph2179` currently share the initial commit. Branch ownership and CI rules should be established during migration.
