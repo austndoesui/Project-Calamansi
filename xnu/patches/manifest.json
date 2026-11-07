@@ -848,6 +848,13 @@
       "source": "xnu/patches/devices/cactus/0119-cactus-pid1-exec-handoff-stage84.patch",
       "upstream_name": "0119-cactus-pid1-exec-handoff-stage84.patch",
       "sha256": "3cbe02c18af3522a48d780219bd3b09db2be35643fcedc00822ad97a301badd4"
+    },
+    {
+      "order": 120,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0120-cactus-pid1-stack-fault-handoff-stage85.patch",
+      "upstream_name": "0120-cactus-pid1-stack-fault-handoff-stage85.patch",
+      "sha256": "5014d3e8e87c79e488a30db82e2f1fdb1ccd9e1395be0f87bb23e34a84bfb01b"
     }
   ]
 }

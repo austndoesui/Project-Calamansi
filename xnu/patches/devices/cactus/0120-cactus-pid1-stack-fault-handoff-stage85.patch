@@ -1,0 +1,151 @@
+diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
+--- a/bsd/kern/kern_exec.c
++++ b/bsd/kern/kern_exec.c
+@@ -1819,8 +1819,60 @@
+ 		goto badtoolate;
+ 	}
+ 
++#if defined(CACTUS)
++	/*
++	 * The Cactus bootstrap is a 4K TTBR0 target. PID1 is the first user
++	 * process to switch into this map, and its argv/Apple strings touch
++	 * previously demand-zero stack pages. Materialize the exact destination
++	 * pages in the target map before the first copyout (rather than relying
++	 * on an EL1 copyout abort to bring up the new user pmap). All normal
++	 * copyout validation and stack contents remain unchanged.
++	 */
++	if (proc_pid(p) == 1 && load_result.unixproc) {
++		vm_map_t pid1_map = get_task_map(task);
++		size_t strings = (size_t)(imgp->ip_strendp - imgp->ip_strings);
++		size_t slots = (size_t)imgp->ip_argc + imgp->ip_envc +
++		    imgp->ip_applec + 4;
++		vm_map_address_t top = (vm_map_address_t)p->user_stack;
++		vm_map_size_t bytes = (vm_map_size_t)strings +
++		    slots * ((imgp->ip_flags & IMGPF_IS_64BIT_ADDR) ? 8u : 4u);
++		if (pid1_map != VM_MAP_NULL && strings < (1u << 20) &&
++		    slots < (1u << 17) && bytes < (1u << 21) && top > bytes) {
++			vm_map_address_t addr = vm_map_trunc_page(top - bytes,
++			    vm_map_page_mask(pid1_map));
++			vm_map_address_t last = vm_map_trunc_page(top - 1,
++			    vm_map_page_mask(pid1_map));
++			vm_map_size_t step = vm_map_page_size(pid1_map);
++			kern_return_t fkr = KERN_SUCCESS;
++			fbcon_stage53_progress("ST85 PID1 stack prefault enter");
++			for (; addr <= last; addr += step) {
++				fkr = vm_fault(pid1_map, addr, VM_PROT_READ | VM_PROT_WRITE,
++				    FALSE, VM_KERN_MEMORY_NONE, THREAD_UNINT, NULL, 0);
++				if (fkr != KERN_SUCCESS) {
++					break;
++				}
++			}
++			if (fkr == KERN_SUCCESS) {
++				fbcon_stage53_progress("ST85 PID1 stack prefault ready");
++			} else {
++				char report[80];
++				snprintf(report, sizeof(report),
++				    "ST85 PID1 stack prefault kr=%d", (int)fkr);
++				fbcon_stage53_progress(report);
++			}
++		} else {
++			fbcon_stage53_progress("ST85 PID1 stack layout INVALID");
++		}
++	}
++#endif
+ 	/* Switch to target task's map to copy out strings */
++#if defined(CACTUS)
++	if (proc_pid(p) == 1) fbcon_stage53_progress("ST85 PID1 map switch enter");
++#endif
+ 	old_map = vm_map_switch(get_task_map(task));
++#if defined(CACTUS)
++	if (proc_pid(p) == 1) fbcon_stage53_progress("ST85 PID1 map switch done");
++#endif
+ 
+ 	if (load_result.unixproc) {
+ 		user_addr_t     ap;
+@@ -5678,8 +5730,15 @@
+ 	/*
+ 	 * Copy out the entire strings area.
+ 	 */
++#if defined(CACTUS)
++	if (proc_pid(p) == 1) fbcon_stage53_progress("ST85 PID1 string copy enter");
++#endif
+ 	error = copyout(imgp->ip_strings, string_area,
+ 	    string_size);
++#if defined(CACTUS)
++	if (proc_pid(p) == 1) fbcon_stage53_progress(error ?
++	    "ST85 PID1 string copy ERROR" : "ST85 PID1 string copy done");
++#endif
+ 	if (error) {
+ 		goto bad;
+ 	}
+@@ -5728,14 +5787,25 @@
+ 	/*
+ 	 * Copy out all our pointer arrays in bulk.
+ 	 */
++#if defined(CACTUS)
++	if (proc_pid(p) == 1) fbcon_stage53_progress("ST85 PID1 ptr copy enter");
++#endif
+ 	error = copyout(ptr_buffer_start, ptr_area,
+ 	    ptr_area_size);
++#if defined(CACTUS)
++	if (proc_pid(p) == 1) fbcon_stage53_progress(error ?
++	    "ST85 PID1 ptr copy ERROR" : "ST85 PID1 ptr copy done");
++#endif
+ 	if (error) {
+ 		goto bad;
+ 	}
+ 
+ 	/* argc (int32, stored in a ptr_size area) */
+ 	error = copyoutptr((user_addr_t)imgp->ip_argc, argc_area, ptr_size);
++#if defined(CACTUS)
++	if (proc_pid(p) == 1) fbcon_stage53_progress(error ?
++	    "ST85 PID1 argc copy ERROR" : "ST85 PID1 argc copy done");
++#endif
+ 	if (error) {
+ 		goto bad;
+ 	}
+diff --git a/osfmk/arm64/sleh.c b/osfmk/arm64/sleh.c
+--- a/osfmk/arm64/sleh.c
++++ b/osfmk/arm64/sleh.c
+@@ -43,6 +43,9 @@
+ #include <kern/restartable.h>
+ #include <kern/socd_client.h>
+ #include <kern/thread.h>
++#if defined(CACTUS)
++#include <kern/task.h>
++#endif
+ #include <kern/zalloc_internal.h>
+ #include <mach/exception.h>
+ #include <mach/arm/traps.h>
+@@ -629,6 +632,31 @@
+ 	}
+ #endif
+ 	bool is_user = PSR64_IS_USER(get_saved_state_cpsr(state));
++#if defined(CACTUS)
++	/*
++	 * One sample per exception class for the real PID1 task.
++	 * Observe EL0 SVC, data/instruction aborts, and kernel copyout aborts
++	 * without altering the original exception handling and recovery path.
++	 */
++	uint32_t cactus_kind = class == ESR_EC_SVC_64 ? 1u :
++	    class == ESR_EC_IABORT_EL0 ? 2u :
++	    class == ESR_EC_DABORT_EL0 ? 4u :
++	    class == ESR_EC_DABORT_EL1 ? 8u : 0u;
++	if (cactus_kind && task_pid(get_threadtask(thread)) == 1) {
++		static uint32_t cactus_seen;
++		if (!(__atomic_fetch_or(&cactus_seen, cactus_kind,
++		    __ATOMIC_RELAXED) & cactus_kind)) {
++			extern void fbcon_stage53_progress(const char *);
++			char report[112];
++			snprintf(report, sizeof(report),
++			    "ST85 EL%d ec=%x esr=%x far=%llx pc=%llx",
++			    is_user ? 0 : 1, (unsigned)class, esr,
++			    (unsigned long long)far,
++			    (unsigned long long)get_saved_state_pc(state));
++			fbcon_stage53_progress(report);
++		}
++	}
++#endif
+ 
+ 	/*
+ 	 * Use KERNEL_DEBUG_CONSTANT_IST here to avoid producing tracepoints
