@@ -1,0 +1,4 @@
+# Keep build inputs portable across Windows and macOS.
+xnu/patches/** text eol=lf
+.github/workflows/** text eol=lf
+tools/*.py text eol=lf

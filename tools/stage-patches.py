@@ -36,7 +36,8 @@ def main():
         src = ROOT / rel
         if not src.is_file():
             raise SystemExit(f"missing patch file: {src}")
-        checksum = hashlib.sha256(src.read_bytes()).hexdigest()
+        content = src.read_bytes().replace(b"\r\n", b"\n")
+        checksum = hashlib.sha256(content).hexdigest()
         if checksum != row["sha256"]:
             raise SystemExit(f"checksum mismatch: {name}: {checksum}")
     actual = {p.relative_to(ROOT) for p in (ROOT/"xnu/patches").rglob("*")
@@ -48,7 +49,7 @@ def main():
         for row in rows:
             target = args.output / row["upstream_name"]
             # Preserve the upstream builder's original overwrite behavior.
-            shutil.copy2(ROOT / row["source"],target)
+            target.write_bytes((ROOT / row["source"]).read_bytes().replace(b"\r\n", b"\n"))
     print(f"PATCH MANIFEST VERIFIED: {len(rows)} files; {len([r for r in rows if r['source'].endswith('.patch')])} patches")
 
 if __name__ == "__main__":
