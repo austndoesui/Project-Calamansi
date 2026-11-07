@@ -820,6 +820,13 @@
       "source": "xnu/patches/devices/cactus/0115-cactus-calamansi-console-pid1.patch",
       "upstream_name": "0115-cactus-calamansi-console-pid1-stage80.patch",
       "sha256": "0f94a9251cc06ec6482a03df68e3bdbae6c1ab55f1e19a934d30ca8280488fde"
+    },
+    {
+      "order": 116,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0116-cactus-pid1-return-console-fix.patch",
+      "upstream_name": "0116-cactus-pid1-return-console-fix-stage81.patch",
+      "sha256": "eb4840e1439a06f00b42676010a72aea1530e0c141041d640317d32e90171daa"
     }
   ]
 }

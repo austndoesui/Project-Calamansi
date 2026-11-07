@@ -6,8 +6,8 @@ cd "$(dirname "$0")"
 
 STAGE="${1:-3}"
 case "$STAGE" in
-    3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79) ;;
-    *) echo "usage: $0 [3..79]" >&2; exit 2 ;;
+    3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80) ;;
+    *) echo "usage: $0 [3..80]" >&2; exit 2 ;;
 esac
 
 OUT="out/cactus/linux-chainload"
@@ -29,6 +29,9 @@ if [[ "$STAGE" -ge 18 ]]; then
         # overwritten during validation or packaging.
         PAYLOAD_SOURCE=out/cactus/payload-stage27.bin
         PREPARED_PAYLOAD="$OUT/stage27-relocated-payload.bin"
+    elif [[ "$STAGE" == 80 ]]; then
+        PAYLOAD_SOURCE=out/cactus/payload-stage80.bin
+        PREPARED_PAYLOAD="$OUT/stage80-relocated-payload.bin"
     elif [[ "$STAGE" == 79 ]]; then
         PAYLOAD_SOURCE=out/cactus/payload-stage79.bin
         PREPARED_PAYLOAD="$OUT/stage79-relocated-payload.bin"
@@ -38,7 +41,7 @@ if [[ "$STAGE" -ge 18 ]]; then
     elif [[ "$STAGE" == 77 ]]; then
         PAYLOAD_SOURCE=out/cactus/payload-stage77.bin
         PREPARED_PAYLOAD="$OUT/stage77-relocated-payload.bin"
-    elif [[ "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then
+    elif [[ "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then
         PAYLOAD_SOURCE=out/cactus/payload-stage76.bin
         PREPARED_PAYLOAD="$OUT/stage76-relocated-payload.bin"
     elif [[ "$STAGE" == 75 ]]; then
@@ -149,13 +152,15 @@ if [[ "$STAGE" -ge 18 ]]; then
         python3 check_stage27_entry.py "$PREPARED_PAYLOAD"
     elif [[ "$STAGE" == 33 ]]; then
         python3 check_stage28_pmap.py "$PREPARED_PAYLOAD"
+    elif [[ "$STAGE" == 80 ]]; then
+        python3 check_stage80_xnu.py "$PREPARED_PAYLOAD"
     elif [[ "$STAGE" == 79 ]]; then
         python3 check_stage79_xnu.py "$PREPARED_PAYLOAD"
     elif [[ "$STAGE" == 78 ]]; then
         python3 check_stage78_xnu.py "$PREPARED_PAYLOAD"
     elif [[ "$STAGE" == 77 ]]; then
         python3 check_stage77_xnu.py "$PREPARED_PAYLOAD"
-    elif [[ "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then
+    elif [[ "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then
         python3 check_stage76_xnu.py "$PREPARED_PAYLOAD"
     elif [[ "$STAGE" == 75 ]]; then
         python3 check_stage75_xnu.py "$PREPARED_PAYLOAD"
@@ -466,27 +471,28 @@ if [[ "$STAGE" -ge 8 ]]; then
           fi
         fi
       fi
-    elif [[ "$STAGE" == 63 || "$STAGE" == 64 || "$STAGE" == 65 || "$STAGE" == 66 || "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then
+    elif [[ "$STAGE" == 63 || "$STAGE" == 64 || "$STAGE" == 65 || "$STAGE" == 66 || "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then
       # Exact Stage62 physical MMIO census plus newly audited Stage63 XNU.
       # Keep all native startup, live console, GIC and recovery paths enabled.
       SOURCES+=(stage19_probe fdt fdt_ranges payload_layout)
       EXTRA_DEFINES=(-DCACTUS_TRACE_STAGE=63 -DCACTUS_STAGE20=1 -DCACTUS_STAGE20B=1 -DCACTUS_STAGE20C=1 -DCACTUS_STAGE20D=1 -DCACTUS_STAGE21C1=1 -DCACTUS_STAGE21C2=1 -DCACTUS_STAGE21D=1 -DCACTUS_STAGE22=1 -DCACTUS_STAGE23=1 -DCACTUS_STAGE24=1 -DCACTUS_STAGE27=1 -DCACTUS_STAGE28_FIX=1 -DCACTUS_STAGE35=1 -DCACTUS_STAGE38_WDT=1 -DCACTUS_STAGE39_WDT_HANDOFF=1 -DCACTUS_STAGE45_COMBINED=1 -DCACTUS_STAGE47_LAYER1=1 -DCACTUS_STAGE48_RUN=1 -DCACTUS_STAGE49_FB=1 -DCACTUS_STAGE50_XNU_FB=1 -DCACTUS_STAGE51_LIVE_CONSOLE=1 -DCACTUS_STAGE52_LIVE_CONSOLE=1 -DCACTUS_STAGE53_LIVE_CONSOLE=1 -DCACTUS_STAGE54_IOKIT_BSD=1 -DCACTUS_STAGE55_BSD_GATE=1 -DCACTUS_STAGE56_CPU_SYNC=1 -DCACTUS_STAGE57_CPU0_IRQ=1 -DCACTUS_STAGE58_GICV3_REARM=1 -DCACTUS_STAGE59_IRQ_WAIT=1 -DCACTUS_STAGE60_GICR=1 -DCACTUS_STAGE61_GICR_ID=1 -DCACTUS_STAGE62_GICR_MMIO=1 -DCACTUS_STAGE63_NATIVE=1 -DCACTUS_TRACE_SLOTS=64 -ffunction-sections -fdata-sections "${PAYLOAD_DEFINE[@]}")
-      if [[ "$STAGE" == 64 || "$STAGE" == 65 || "$STAGE" == 66 || "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES[0]=-DCACTUS_TRACE_STAGE=$STAGE; fi
-      if [[ "$STAGE" == 65 || "$STAGE" == 66 || "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE65_NATIVE=1); fi
+      if [[ "$STAGE" == 64 || "$STAGE" == 65 || "$STAGE" == 66 || "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES[0]=-DCACTUS_TRACE_STAGE=$STAGE; fi
+      if [[ "$STAGE" == 65 || "$STAGE" == 66 || "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE65_NATIVE=1); fi
       if [[ "$STAGE" == 66 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE66_NATIVE=1); fi
-      if [[ "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE67_NATIVE=1); fi
-      if [[ "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE68_NATIVE=1); fi
-      if [[ "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE69_NATIVE=1); fi
-      if [[ "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE70_NATIVE=1); fi
-      if [[ "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE71_NATIVE=1); fi
-      if [[ "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE72_NATIVE=1); fi
-      if [[ "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE73_NATIVE=1); fi
-      if [[ "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE74_NATIVE=1); fi
-      if [[ "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE75_NATIVE=1); fi
-      if [[ "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE76_NATIVE=1); fi
-      if [[ "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE77_NATIVE=1); fi
-      if [[ "$STAGE" == 78 || "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE78_NATIVE=1); fi
-      if [[ "$STAGE" == 79 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE79_NATIVE=1); fi
+      if [[ "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE67_NATIVE=1); fi
+      if [[ "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE68_NATIVE=1); fi
+      if [[ "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE69_NATIVE=1); fi
+      if [[ "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE70_NATIVE=1); fi
+      if [[ "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE71_NATIVE=1); fi
+      if [[ "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE72_NATIVE=1); fi
+      if [[ "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE73_NATIVE=1); fi
+      if [[ "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE74_NATIVE=1); fi
+      if [[ "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE75_NATIVE=1); fi
+      if [[ "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE76_NATIVE=1); fi
+      if [[ "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE77_NATIVE=1); fi
+      if [[ "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE78_NATIVE=1); fi
+      if [[ "$STAGE" == 79 || "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE79_NATIVE=1); fi
+      if [[ "$STAGE" == 80 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE80_NATIVE=1); fi
     else
       SOURCES+=(stage14_probe)
     fi
@@ -548,7 +554,7 @@ python3 "$MKBOOT" --header_version 2 \
     -o "$IMAGE"
 python3 check_image.py "$IMAGE"
 sha256sum "$IMAGE"
-if [[ "$STAGE" == 51 || "$STAGE" == 52 || "$STAGE" == 53 || "$STAGE" == 54 || "$STAGE" == 55 || "$STAGE" == 56 || "$STAGE" == 57 || "$STAGE" == 58 || "$STAGE" == 59 || "$STAGE" == 60 || "$STAGE" == 61 || "$STAGE" == 62 || "$STAGE" == 63 || "$STAGE" == 64 || "$STAGE" == 65 || "$STAGE" == 66 || "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 ]]; then
+if [[ "$STAGE" == 51 || "$STAGE" == 52 || "$STAGE" == 53 || "$STAGE" == 54 || "$STAGE" == 55 || "$STAGE" == 56 || "$STAGE" == 57 || "$STAGE" == 58 || "$STAGE" == 59 || "$STAGE" == 60 || "$STAGE" == 61 || "$STAGE" == 62 || "$STAGE" == 63 || "$STAGE" == 64 || "$STAGE" == 65 || "$STAGE" == 66 || "$STAGE" == 67 || "$STAGE" == 68 || "$STAGE" == 69 || "$STAGE" == 70 || "$STAGE" == 71 || "$STAGE" == 72 || "$STAGE" == 73 || "$STAGE" == 74 || "$STAGE" == 75 || "$STAGE" == 76 || "$STAGE" == 77 || "$STAGE" == 78 || "$STAGE" == 79 || "$STAGE" == 80 ]]; then
   # Pair the image with a hash the Stage51 hardware runner must check.
   sha256sum "$IMAGE" > "$IMAGE.sha256"
 fi
