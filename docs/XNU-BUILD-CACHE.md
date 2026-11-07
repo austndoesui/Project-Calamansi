@@ -34,3 +34,24 @@ headers` steps, and check for the absence of `Building bootstrap_cmds`
 and `Installing xnu headers` in the Build log. Faster builds are expected,
 but a 4–7 minute target is not guaranteed; source fetching, patch application,
 linking and a fresh macOS runner remain.
+
+## Measured validation
+
+Commit `8e82ad7` passed [cache-population run 42388776600](https://github.com/austndoesui/Project-Calamansi/actions/runs/42388776600).
+Both the versioned prebuilt-tool cache and the header cache were saved.
+The subsequent unchanged
+[warm-cache run 42389657141](https://github.com/austndoesui/Project-Calamansi/actions/runs/42389657141)
+also passed. Both caches produced **exact cache hits**. There was no
+`Building bootstrap_cmds` or `Installing xnu headers` step in its build log.
+
+| Run | XNU Build step | Total job |
+| --- | --- | --- |
+| Stage81 baseline 42385859444 | 10m49s | 12m12s |
+| Warm cache 42389657141 | **5m27s** | **6m30s** |
+
+The second run's cumulative ccache statistics rose from 3,210 to 4,280
+cacheable calls: **1,070 additional hits, zero additional misses**.
+This confirms that repeated compilation was already largely cached; the
+workflow speedup comes from caching previously repeated *tool and header
+installation*. A new patch that affects generated headers correctly
+invalidates the header cache and will take longer.
