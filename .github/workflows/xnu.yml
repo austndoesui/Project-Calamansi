@@ -92,10 +92,26 @@ jobs:
         id: prebuild
         uses: actions/cache/restore@v4
         with:
+          # bootstrap_cmds installs mig/migcom within the fake Xcode toolchain.
           path: |
             dxb/fakeroot/usr/local
+            dxb/fakeroot/Applications
             dxb/fakeroot/System/Library/Frameworks/System.framework
-          key: prebuild-${{ runner.os }}-${{ env.MACOS_VERSION }}-${{ env.MACHINE_CONFIG }}-${{ env.DXB_SHA }}-libfirehose-a53-v2
+          key: prebuild-${{ runner.os }}-${{ env.MACOS_VERSION }}-${{ env.MACHINE_CONFIG }}-${{ env.DXB_SHA }}-libfirehose-a53-v3
+
+      - name: Compute header cache key
+        id: header-key
+        shell: bash
+        run: echo "digest=$(python3 tools/xnu_header_cache_key.py)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore installed XNU headers
+        id: headers
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            dxb/fakeroot/.xnu_headers_installed
+            dxb/fakeroot/usr/include
+          key: headers-${{ runner.os }}-${{ env.MACOS_VERSION }}-${{ env.MACHINE_CONFIG }}-${{ env.DXB_SHA }}-${{ steps.header-key.outputs.digest }}
 
       - name: Deps
         run: |
@@ -168,8 +184,18 @@ jobs:
         with:
           path: |
             dxb/fakeroot/usr/local
+            dxb/fakeroot/Applications
             dxb/fakeroot/System/Library/Frameworks/System.framework
           key: ${{ steps.prebuild.outputs.cache-primary-key }}
+
+      - name: Save installed XNU headers
+        if: success() && steps.headers.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            dxb/fakeroot/.xnu_headers_installed
+            dxb/fakeroot/usr/include
+          key: ${{ steps.headers.outputs.cache-primary-key }}
 
       - name: Save ccache
         if: always() && steps.ccache.outputs.cache-hit != 'true'
