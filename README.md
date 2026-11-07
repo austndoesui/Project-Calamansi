@@ -8,7 +8,7 @@
 <p align="center">
   <img alt="Platform" src="https://img.shields.io/badge/platform-MT6761%20%2F%20MT6765-343434?style=flat-square">
   <img alt="Kernel" src="https://img.shields.io/badge/kernel-XNU-343434?style=flat-square">
-  <img alt="Status" src="https://img.shields.io/badge/cactus-native%20XNU%20%2B%20PID1%20syscall%20verified-168c43?style=flat-square">
+  <img alt="Status" src="https://img.shields.io/badge/status-active%20development-497b70?style=flat-square">
   <img alt="Devices" src="https://img.shields.io/badge/devices-cactus%20%7C%20CPH2179-497b70?style=flat-square">
 </p>
 
