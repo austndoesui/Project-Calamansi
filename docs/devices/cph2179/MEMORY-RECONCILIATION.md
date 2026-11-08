@@ -145,6 +145,26 @@ to choose an XNU free-memory range: the remaining holes/reservations and the
 large high-memory carveout still need provenance, and Linux's current memblock
 state is not automatically a safe handoff map for a different kernel.
 
+### Stage 15 level 5 memory comparison
+
+The verified `oppo-early-wdt.bin` trace contains 18 fixed FDT reservations and
+the live DTB/initrd ranges. `shim/compare-oppo-memory.py` now subtracts those,
+the 25 bootloader `mblock_info` reservation entries, and (when supplied) a
+same-boot debugfs memblock reservation capture. For example:
+
+```sh
+python shim/compare-oppo-memory.py ../device/iomem.txt \
+  ../out/shim/oppo-early-wdt.bin \
+  --debugfs-reserved ../out/cph2179-runtime-20261108-145248/debugfs-memblock-reserved.txt
+```
+
+The runtime capture's 33 reserved intervals include the large
+`[0x12aa00000,0x13fc00000)` carveout and therefore remove it from the former
+high-memory candidate. The resulting spans remain evidence intersections, not
+XNU allocator approvals: memblock is a snapshot of Android's live kernel, its
+reservations may be Linux-specific, and board/platform ownership and the shim's
+actual handoff-time occupancy still need classification.
+
 ## Bootloader `mblock_info` decoded from live FDT
 
 The live FDT's `memory/mblock_info` property decodes against the available
