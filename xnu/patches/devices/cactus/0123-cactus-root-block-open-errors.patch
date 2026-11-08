@@ -1,0 +1,13 @@
+diff --git a/bsd/vfs/vfs_subr.c b/bsd/vfs/vfs_subr.c
+--- a/bsd/vfs/vfs_subr.c
++++ b/bsd/vfs/vfs_subr.c
+@@ -2151,7 +2151,8 @@
+ #endif /* MAC */
+ 
+ 	if ((error = VNOP_OPEN(nvp, FREAD, &context))) {
+-		panic("bdevvp failed: open");
++		panic("bdevvp failed: open error=%d rootdev=%u:%u",
++		    error, major(dev), minor(dev));
+ 		return error;
+ 	}
+ 	*vpp = nvp;

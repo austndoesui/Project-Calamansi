@@ -2,7 +2,7 @@ diff --git a/bsd/dev/cactus_msdc.c b/bsd/dev/cactus_msdc.c
 new file mode 100644
 --- /dev/null
 +++ b/bsd/dev/cactus_msdc.c
-@@ -0,0 +1,528 @@
+@@ -0,0 +1,543 @@
 +/* Cactus MT6765 internal eMMC: XNU BSD block device.
 + * The 0x11230000 controller and polled CMD13/CMD17 operations were verified
 + * on Redmi 6A in Stage88. Inherit LK's clock, voltage, tuning and RCA=1.
@@ -337,9 +337,19 @@ new file mode 100644
 +static int
 +cactus_open(dev_t dev, int flags, __unused int type, __unused struct proc *p)
 +{
-+    if (!cactus_initialized || minor(dev) > 1 ||
-+        (minor(dev) == 1 && !cactus_root_count)) return ENXIO;
-+    return ((flags & FWRITE) && (!cactus_writable || minor(dev) != 1)) ? EROFS : 0;
++    int error = 0;
++    if (!cactus_initialized || major(dev) != cactus_bmajor ||
++        minor(dev) > 1 ||
++        (minor(dev) == 1 && !cactus_root_count)) {
++        error = ENXIO;
++    } else if ((flags & FWRITE) &&
++               (!cactus_writable || minor(dev) != 1)) {
++        error = EROFS;
++    }
++    printf("CACTUS MSDC: block open dev=%u:%u expected=%d:1 flags=0x%x ready=%d writable=%d root=%u error=%d\n",
++           major(dev), minor(dev), cactus_bmajor, flags,
++           cactus_initialized, cactus_writable, cactus_root_count, error);
++    return error;
 +}
 +
 +static int
@@ -397,6 +407,8 @@ new file mode 100644
 +    switch (cmd) {
 +    case DKIOCGETBLOCKSIZE:
 +    case DKIOCGETPHYSICALBLOCKSIZE: *(uint32_t *)data = CMMC_SECTOR; return 0;
++    case DKIOCSETBLOCKSIZE:
++        return *(uint32_t *)data == CMMC_SECTOR ? 0 : EINVAL;
 +    case DKIOCGETBLOCKCOUNT: *(uint64_t *)data = sectors; return 0;
 +    case DKIOCISWRITABLE: *(uint32_t *)data = (cactus_writable && minor(dev) == 1); return 0;
 +    case DKIOCGETMAXBLOCKCOUNTREAD: *(uint64_t *)data = CMMC_MAXBLOCKS; return 0;
@@ -505,6 +517,9 @@ new file mode 100644
 +        devfs_make_node(makedev(cactus_cmajor, 1), DEVFS_CHAR,
 +                        UID_ROOT, GID_OPERATOR, 0440, "remmcroot0");
 +    }
++    printf("CACTUS MSDC: registered block %d char %d root dev=%u:%u name=%s\n",
++           cactus_bmajor, cactus_cmajor, major(cactus_rootdev),
++           minor(cactus_rootdev), cactus_root_name);
 +    printf("CACTUS MSDC: eMMC ready, sectors=%u root=%u %s\n",
 +           cactus_capacity, cactus_root_count, cactus_writable ? "writable" : "read-only");
 +    return 0;
