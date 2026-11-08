@@ -123,7 +123,10 @@ jobs:
           MAKEFLAGS: ${{ inputs.keep_going == 'false' && '' || '-k' }}
         run: |
           set -o pipefail
+          set +e
           bash build.sh 2>&1 | tee ../xnu-build.log
+          build_status=${PIPESTATUS[0]}
+          set -e
           if [ "$MACHINE_CONFIG" = CACTUS ]; then
             python3 - <<'PY'
           from pathlib import Path
@@ -172,6 +175,7 @@ jobs:
           print('REQUIRED OPPO PATCH APPLIED:', name)
           PY
           fi
+          exit "$build_status"
 
       - name: ccache stats
         if: always()
