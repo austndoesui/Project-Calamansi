@@ -44,9 +44,9 @@
  * A failure can hang; hold power/return to fastboot and restore boot.
  */
 #ifndef STAGE
-#error Specify STAGE=1 through 79
+#error Specify STAGE=1 through 85
 #endif
-#if STAGE < 1 || STAGE > 79
+#if STAGE < 1 || STAGE > 85
 #error Unsupported STAGE
 #endif
 #if STAGE >= 3 && !defined(TRACE_ADDR)

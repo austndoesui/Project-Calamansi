@@ -295,7 +295,25 @@ static uint64_t loaded_entry_pa, loaded_boot_args_pa;
 #define STAGE20B_RESTORE_EVENT 0x220bu
 #define STAGE22_TARGET_VA 0xfffffff007ac0c20ull
 #else
-#if defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
+#if defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
+#define STAGE20B_TARGET 0x81ac042cull
+#define STAGE20B_ORIG 0xf9400108u
+#elif defined(CACTUS_STAGE84_NATIVE) && CACTUS_STAGE84_NATIVE
+#define STAGE20B_TARGET 0x81ac01ecull
+#define STAGE20B_ORIG 0xf9400108u
+#elif defined(CACTUS_STAGE83_NATIVE) && CACTUS_STAGE83_NATIVE
+#define STAGE20B_TARGET 0x81ac000cull
+#define STAGE20B_ORIG 0xf9400108u
+#elif defined(CACTUS_STAGE82_NATIVE) && CACTUS_STAGE82_NATIVE
+#define STAGE20B_TARGET 0x81abfd0cull
+#define STAGE20B_ORIG 0xf9400108u
+#elif defined(CACTUS_STAGE81_NATIVE) && CACTUS_STAGE81_NATIVE
+#define STAGE20B_TARGET 0x81abfb6cull
+#define STAGE20B_ORIG 0xf9400108u
+#elif defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+#define STAGE20B_TARGET 0x81abfafcull
+#define STAGE20B_ORIG 0xf9400108u
+#elif defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
 #define STAGE20B_TARGET 0x81abebacull
 #define STAGE20B_ORIG 0xf9400108u
 #elif defined(CACTUS_STAGE78_NATIVE) && CACTUS_STAGE78_NATIVE
@@ -650,7 +668,11 @@ static int stage20b_arm(void)
     /* Stage78 Xcode 16 rebased boot0 and rewrote arm_init. Use the exact
      * SHA-pinned Stage78 instruction profile before enabling native EL1. */
     if (loaded_entry_pa != 0x8142c488ull ||
+#if defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+        loaded_boot_args_pa != 0x824c4000ull) return 0;
+#else
         loaded_boot_args_pa != 0x824c0000ull) return 0;
+#endif
     static const struct { uintptr_t pa; uint32_t word; } pinned[] = {
         {0x8142c488ull,0x14000719u},
         {0x8142e0ecull,0xd510109fu},
@@ -664,10 +686,46 @@ static int stage20b_arm(void)
         {0x8142e43cull,0xd518a200u},
         {0x8142e494ull,0xd5181000u},
         {0x8142e498ull,0xd5033fdfu},
-#if defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
+#if defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
+        {0x81abfdfcull,0xd10343ffu},
+        {0x81abfe1cull,0xf0000a68u},
+        {0x81abfe24ull,0xf0ffade1u},
+        {0x81abfe2cull,0x52800020u},
+        {0x81ac042cull,0xf9400108u},
+#elif defined(CACTUS_STAGE84_NATIVE) && CACTUS_STAGE84_NATIVE
+        {0x81abfbbCull,0xd10343ffu},
+        {0x81abfbdcull,0xf0000a68u},
+        {0x81abfbe4ull,0xf0ffade1u},
+        {0x81abfbecull,0x52800020u},
+        {0x81ac01ecull,0xf9400108u},
+#elif defined(CACTUS_STAGE83_NATIVE) && CACTUS_STAGE83_NATIVE
+        {0x81abf9dcull,0xd10343ffu},
+        {0x81abf9fcull,0xf0000a68u},
+        {0x81abfa04ull,0xf0ffade1u},
+        {0x81abfa0cull,0x52800020u},
+        {0x81ac000cull,0xf9400108u},
+#elif defined(CACTUS_STAGE82_NATIVE) && CACTUS_STAGE82_NATIVE
+        {0x81abf6dcull,0xd10343ffu},
+        {0x81abf6fcull,0xf0000a68u},
+        {0x81abf704ull,0xf0ffade1u},
+        {0x81abf70cull,0x52800020u},
+        {0x81abfd0cull,0xf9400108u},
+#elif defined(CACTUS_STAGE81_NATIVE) && CACTUS_STAGE81_NATIVE
+        {0x81abf53cull,0xd10343ffu},
+        {0x81abf55cull,0xf0000a68u},
+        {0x81abf564ull,0xf0ffade1u},
+        {0x81abf56cull,0x52800020u},
+        {0x81abfb6cull,0xf9400108u},
+#elif defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+        {0x81abf4ccull,0xd10343ffu},
+        {0x81abf4ecull,0xf0000a68u},
+        {0x81abf4f4ull,0xf0ffade1u},
+        {0x81abf4fcull,0x52800020u},
+        {0x81abfafcull,0xf9400108u},
+#elif defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
         {0x81abe57cull,0xd10343ffu},
         {0x81abe59cull,0x90000a68u},
-        {0x81abe5a4ull,0xb0ffae01u},
+        {0x81abe5a4ull,0x90ffae01u},
         {0x81abe5acull,0x52800020u},
         {0x81abebacull,0xf9400108u},
 #else
@@ -1372,7 +1430,25 @@ static void stage45_scanout_probe(uintptr_t dtb)
 #if defined(CACTUS_STAGE48_RUN) && CACTUS_STAGE48_RUN
     /* Last known Stage47 artificial checkpoint must remain untouched. */
     const uintptr_t stage48_pa=
-#if defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
+#if defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
+        0x81ac042cull;
+    const uint32_t stage48_expected=0xf9400108u;
+#elif defined(CACTUS_STAGE84_NATIVE) && CACTUS_STAGE84_NATIVE
+        0x81ac01ecull;
+    const uint32_t stage48_expected=0xf9400108u;
+#elif defined(CACTUS_STAGE83_NATIVE) && CACTUS_STAGE83_NATIVE
+        0x81ac000cull;
+    const uint32_t stage48_expected=0xf9400108u;
+#elif defined(CACTUS_STAGE82_NATIVE) && CACTUS_STAGE82_NATIVE
+        0x81abfd0cull;
+    const uint32_t stage48_expected=0xf9400108u;
+#elif defined(CACTUS_STAGE81_NATIVE) && CACTUS_STAGE81_NATIVE
+        0x81abfb6cull;
+    const uint32_t stage48_expected=0xf9400108u;
+#elif defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+        0x81abfafcull;
+    const uint32_t stage48_expected=0xf9400108u;
+#elif defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
         0x81abebacull;
     const uint32_t stage48_expected=0xf9400108u;
 #elif defined(CACTUS_STAGE78_NATIVE) && CACTUS_STAGE78_NATIVE
@@ -1829,8 +1905,20 @@ void stage19_probe(uintptr_t dtb)
             mark(0x2303,loaded_entry_pa,loaded_boot_args_pa,
                  STAGE22_TARGET_VA);
 #if defined(CACTUS_STAGE28_FIX) && CACTUS_STAGE28_FIX
-#if defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
-            mark(0x2800,0xa0d33e9f8c73e9b4ull,loaded_entry_pa,loaded_boot_args_pa);
+#if defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
+            mark(0x2800,0xdd39a64cd43de54dull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE84_NATIVE) && CACTUS_STAGE84_NATIVE
+            mark(0x2800,0xdae21a356c72c79full,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE83_NATIVE) && CACTUS_STAGE83_NATIVE
+            mark(0x2800,0xf3cf4c7978388b30ull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE82_NATIVE) && CACTUS_STAGE82_NATIVE
+            mark(0x2800,0xdb8fa92517586342ull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE81_NATIVE) && CACTUS_STAGE81_NATIVE
+            mark(0x2800,0xc38d4ebda19c6693ull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+            mark(0x2800,0xaf41e570707774fbull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE79_NATIVE) && CACTUS_STAGE79_NATIVE
+            mark(0x2800,0x32212e13ff1a92e3ull,loaded_entry_pa,loaded_boot_args_pa);
 #elif defined(CACTUS_STAGE78_NATIVE) && CACTUS_STAGE78_NATIVE
             mark(0x2800,0x1779340d044523adull,loaded_entry_pa,loaded_boot_args_pa);
 #elif defined(CACTUS_STAGE77_NATIVE) && CACTUS_STAGE77_NATIVE

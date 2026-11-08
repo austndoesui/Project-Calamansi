@@ -2,12 +2,12 @@
 param(
     [int]$CaptureSeconds = 60,
     [Parameter(Mandatory=$true)][string]$Serial,
-    [ValidateSet(49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79)][int]$Stage = 49
+    [ValidateSet(49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85)][int]$Stage = 49
 )
 $ErrorActionPreference = 'Stop'
 if ($CaptureSeconds -lt 30) { throw 'CaptureSeconds must be at least 30' }
 $shimDir = $PSScriptRoot
-$root = Split-Path (Split-Path $shimDir -Parent) -Parent
+$root = Split-Path $shimDir -Parent
 $bootImage = Join-Path $shimDir "out\cactus\cactus-trace-stage-$Stage-boot.img"
 $hash = if ($Stage -eq 49) {
     '49EA5B6C975603B9B0891180F587B53819CA7AF3C1AC6C6DEBD3DA1640D7405C'
