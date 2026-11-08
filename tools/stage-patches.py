@@ -59,15 +59,9 @@ def main():
             if args.device is not None and len(parts) >= 4 and parts[2] == "devices":
                 target = args.device.lower()
                 owner = parts[3]
-                # OPPO's compile-profile patch extends the shared ARM64 machine
-                # config introduced by Cactus patch 0082. It does not use the
-                # later Cactus bring-up patches, which are board-specific.
-                oppo_bootstrap = (
-                    target == "oppo6765"
-                    and owner == "cactus"
-                    and row["upstream_name"] == "0082-cactus-machine-config.patch"
-                )
-                include = owner == target or oppo_bootstrap
+                # OPPO6765 has an independent compile-profile patch. Cactus
+                # patches contain board-specific VM and early-boot behavior.
+                include = owner == target
             if include:
                 selected.append(row)
 

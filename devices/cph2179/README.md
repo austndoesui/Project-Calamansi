@@ -1,8 +1,9 @@
 # CPH2179
 
-Independent target, not yet hardware-verified. No XNU execution, framebuffer,
-memory-layout handoff, or paging claims are made. The Cactus flash scripts are
-not suitable for this device.
+Independent target. Stage 15 shim entry and FDT/reservation diagnostics have
+been observed on CPH2179 over CDC. XNU execution, framebuffer operation,
+memory-layout handoff, and paging remain unverified. The Cactus flash scripts
+are not suitable for this device.
 
 ## Shim entry probe
 
@@ -26,8 +27,10 @@ Build result: image header inspected; 8,587,264 bytes; fits the recorded
 `/chosen/bootargs` property removed; the boot image header command line is
 empty. It also contains the captured 8 MiB DTBO image.
 The user reports flashing an entry-only shim and recovering Android, but has
-not confirmed the flashed file's SHA256. The resulting pmsg capture contained
-no shim marker, so shim entry remains unconfirmed.
+not confirmed the flashed file's SHA256. That attempt's pmsg capture contained
+no shim marker, so that particular attempt is unconfirmed. A later Stage 15
+level-5 CDC capture independently confirmed shim entry; see the milestone
+record below.
 
 The extracted stock boot image is `../device/boot.img`, SHA256
 `210f2383d822b7a88653c39a15da9bde5bfae410fef12e8d5ae0e82f45cbb001`.
@@ -47,7 +50,8 @@ only `console-ramoops`; `pmsg-ramoops-0` was absent. The 262,132-byte console
 dump is partially garbled. Its readable tail shows Android init requesting a
 reboot to bootloader (`arch_reset: cmd = bootloader`) and the associated reset
 call trace; this is not a kernel panic signature. No `OPPO6765/SHIM` marker is
-present, so this capture does not confirm shim entry. The standalone
+present, so this Android pstore capture does not itself confirm shim entry.
+The later Stage 15 CDC capture does confirm entry. The standalone
 `console-ramoops` file matches that capture byte-for-byte.
 
 The pmsg self-test later succeeded across a warm reboot: the user found
@@ -177,10 +181,10 @@ session `0xca15e005`, and the complete event set through `STAGE15_DONE`
 (`0x1589`: DRAM `0x40000000`–`0x140000000`), and 18 fixed reservation ranges
 (`0x158c`). The decoder reports `STAGE15 EARLY PASS`.
 
-This verifies the early shim diagnostic path through FDT/reservation reporting
-on the phone. It does not yet validate that those ranges are safe for XNU, nor
-does it show an XNU handoff or iOS userspace boot. Preserve the capture and
-image hash alongside any later memory-layout reconciliation.
+This confirms that the CPH2179 shim entered and completed its early FDT and
+fixed-reservation diagnostic path. It does not validate that those ranges are
+safe for XNU, nor does it show an XNU handoff or iOS userspace boot. Preserve
+the capture and image hash alongside any later memory-layout reconciliation.
 
 ## XNU RAM window is unresolved
 

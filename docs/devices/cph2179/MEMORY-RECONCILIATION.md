@@ -431,7 +431,7 @@ the shared workspace.
 
 | Milestone | Status | Required evidence |
 | --- | --- | --- |
-| Shim entered | Not confirmed; current Android pmsg has no shim marker | CPH2179 boot-image provenance plus `OPPO6765/SHIM ENTRY` pmsg or UART marker |
+| Shim entered | **Confirmed** by Stage 15 early level-5 USB CDC trace `oppo-early-wdt.bin`: session `0xca15e005`, sequence 0 entry event `0x1580`, followed by FDT and reservation diagnostics through `STAGE15_DONE` | Direct CPH2179 shim trace. The Android pmsg capture remains empty; it is not the evidence used for this milestone. |
 | XNU entered | Not confirmed; no XNU-side marker captured | XNU-emitted marker after its first instruction; shim handoff markers do not count |
 | iOS userland reached | Not confirmed; no launchd evidence captured | Evidence that launchd is PID 1 and executed, plus a working userland signal |
 
@@ -447,9 +447,9 @@ after power-off or memory reuse.
 `xnu handoff` is logged before `xnu_enter_el1`; `xnu el1 reached` is also a
 shim checkpoint immediately before the branch to XNU. Neither proves XNU ran
 its first instruction. Require an XNU-side marker to advance that row.
-A successful build, bootloader logo, or reboot is not evidence of any
-milestone. Update the table only when the corresponding device log or other
-direct CPH2179 evidence is available.
+A successful build, bootloader logo, or reboot is not evidence of a milestone.
+The Stage 15 CDC capture is direct evidence for shim entry only. Update later
+rows only when the corresponding XNU-side or userland evidence is available.
 
 `shim/TRACE-STAGE18.md` and `docs/devices/cactus/STAGE63` through the later
 Cactus stage notes describe Redmi 6A/Cactus work. They are useful references,

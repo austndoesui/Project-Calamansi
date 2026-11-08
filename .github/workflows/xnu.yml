@@ -69,11 +69,11 @@ jobs:
           # after validating every SHA256; canonical files live under scope folders.
           python3 tools/stage-patches.py --device "$MACHINE_CONFIG" --output dxb/patches
           if [ "$MACHINE_CONFIG" = OPPO6765 ]; then
-            test -f dxb/patches/0082-cactus-machine-config.patch
             test -f dxb/patches/0115-oppo6765-machine-config.patch
+            test ! -f dxb/patches/0082-cactus-machine-config.patch
             test ! -f dxb/patches/0084-cactus-16k-pte-align.patch
             test ! -f dxb/patches/0114-cactus-mockfs-vnode-read-stage79.patch
-            echo "OPPO6765 patch selection verified; Cactus bring-up patches excluded"
+            echo "OPPO6765 standalone patch selection verified; Cactus patches excluded"
           fi
           # libfirehose_kernel is built by xcodebuild, not the XNU makefiles.
           # It must be patched here, before bash parses build.sh: a patches/*.sh

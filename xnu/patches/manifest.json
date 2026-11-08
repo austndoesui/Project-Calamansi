@@ -819,7 +819,7 @@
       "scope": "device-oppo6765",
       "source": "xnu/patches/devices/oppo6765/0115-oppo6765-machine-config.patch",
       "upstream_name": "0115-oppo6765-machine-config.patch",
-      "sha256": "767290357c5ab927b4cf2d54e62bb9857e699b9e692285f871f05c2acf66d9a5"
+      "sha256": "09f4777d9e1d8949ce77feb212d688730224386be3f62c0a9a3f3875d46db892"
     }
   ]
 }
