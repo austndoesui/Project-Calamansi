@@ -181,3 +181,29 @@ This verifies the early shim diagnostic path through FDT/reservation reporting
 on the phone. It does not yet validate that those ranges are safe for XNU, nor
 does it show an XNU handoff or iOS userspace boot. Preserve the capture and
 image hash alongside any later memory-layout reconciliation.
+
+## XNU RAM window is unresolved
+
+The current `SWEETXNU` payload ABI carries one contiguous `phys_base` / `mem_size`
+window, plus kernel segments, ADT, and boot arguments inside that window. The
+loader validates that whole window against the live FDT and the 16 KiB payload
+alignment. The existing Cactus example uses `[0x70000000, 0xc0000000)` (1.25
+GiB); that is a Cactus configuration, not an XNU minimum-memory requirement,
+and it overlaps OPPO reservations.
+
+The conservative comparison, subtracting the 33 captured Android runtime
+memblock reservations as well as FDT and bootloader reservations, leaves a
+largest 16 KiB-aligned contiguous interval of `[0xc0000000, 0xffff4000)`
+(`0x3fff4000` bytes, just under 1 GiB). It is inside the reported System RAM
+bank and bootloader mblock #14, and avoids every reservation in those captures.
+This is a **candidate for an XNU diagnostic window**, not an approved final
+layout: Android runtime reservations may include Linux-specific allocations,
+and no CPH2179 XNU payload has been built and measured against it. The smaller
+`[0x55b00000, 0x72000000)` interval is 453 MiB and is also only a candidate.
+
+The current payload format represents one contiguous window, not fragmented
+RAM as multiple independently usable extents. Before choosing a production
+window, measure the actual kernel segments/ADT/bootargs and decide whether this
+device can boot with the candidate extent or the XNU memory-map/loader path
+must be extended for discontiguous RAM. Do not copy the Cactus base/size to the
+OPPO ADT.
