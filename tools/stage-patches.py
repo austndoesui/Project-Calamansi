@@ -2,7 +2,8 @@
 """Verify Calamansi's ordered patch manifest and stage legacy-compatible names.
 
 The upstream XNU builder iterates a flat patches directory by name; the
-canonical files here are organized by scope. Never silently skip entries.
+canonical files here are organized by scope. Device builds can stage only
+their own patches plus common/legacy patches. Never silently skip entries.
 """
 import argparse
 import hashlib
@@ -16,6 +17,11 @@ MANIFEST = ROOT / "xnu/patches/manifest.json"
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, help="Directory for flat legacy filenames")
+    parser.add_argument(
+        "--device",
+        choices=("CACTUS", "OPPO6765"),
+        help="stage common/legacy patches plus only this device's patches",
+    )
     parser.add_argument("--verify-only", action="store_true")
     args = parser.parse_args()
     if args.output is None and not args.verify_only:
@@ -45,11 +51,39 @@ def main():
     if actual != sources:
         raise SystemExit(f"manifest differs from tree: missing={sources-actual}; extra={actual-sources}")
     if args.output is not None:
-        args.output.mkdir(parents=True, exist_ok=True)
+        selected = []
         for row in rows:
+            rel = Path(row["source"])
+            parts = rel.parts
+            include = True
+            if args.device is not None and len(parts) >= 4 and parts[2] == "devices":
+                target = args.device.lower()
+                owner = parts[3]
+                # OPPO's compile-profile patch extends the shared ARM64 machine
+                # config introduced by Cactus patch 0082. It does not use the
+                # later Cactus bring-up patches, which are board-specific.
+                oppo_bootstrap = (
+                    target == "oppo6765"
+                    and owner == "cactus"
+                    and row["upstream_name"] == "0082-cactus-machine-config.patch"
+                )
+                include = owner == target or oppo_bootstrap
+            if include:
+                selected.append(row)
+
+        args.output.mkdir(parents=True, exist_ok=True)
+        selected_names = {row["upstream_name"] for row in selected}
+        # Remove stale files previously staged from this manifest while leaving
+        # any patches supplied by the upstream build-script repository intact.
+        for row in rows:
+            target = args.output / row["upstream_name"]
+            if row["upstream_name"] not in selected_names and target.exists():
+                target.unlink()
+        for row in selected:
             target = args.output / row["upstream_name"]
             # Preserve the upstream builder's original overwrite behavior.
             target.write_bytes((ROOT / row["source"]).read_bytes().replace(b"\r\n", b"\n"))
+        print(f"STAGED {len(selected)} manifest entries for {args.device or 'all devices'} in {args.output}")
     print(f"PATCH MANIFEST VERIFIED: {len(rows)} files; {len([r for r in rows if r['source'].endswith('.patch')])} patches")
 
 if __name__ == "__main__":
