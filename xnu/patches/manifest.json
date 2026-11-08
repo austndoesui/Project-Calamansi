@@ -861,7 +861,7 @@
       "scope": "devices/cactus",
       "source": "xnu/patches/devices/cactus/0121-cactus-msdc-readonly-root.patch",
       "upstream_name": "0121-cactus-msdc-readonly-root.patch",
-      "sha256": "9e21ec4f9e6676cba2074aecdf80f60fa1105d6ff81f8d8892eaababe3eb87b8"
+      "sha256": "a49965417653f4d97f1eb3b2ef88d33514d3de64d8ba7094928f5473d4da46ca"
     }
   ]
 }

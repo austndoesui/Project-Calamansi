@@ -477,10 +477,7 @@ diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
 diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
 --- a/bsd/kern/bsd_init.c
 +++ b/bsd/kern/bsd_init.c
-@@ -691,5 +691,17 @@
- 	bsd_init_kprintf("calling vfsinit\n");
- 	vfsinit();
- 
+@@ -720,2 +720,14 @@
 +#if defined(ARM64_BOARD_CONFIG_CACTUS)
 +	/* Probe native eMMC while keeping the existing md0 root mounted.
 +	 * This is a bounded, non-fatal read-only GPT/EXT_CSD probe. */
