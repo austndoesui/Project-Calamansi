@@ -14,7 +14,7 @@ if ! "$adb_bin" get-state >/dev/null 2>&1; then
 fi
 
 has_remote_error() {
-    rg -aq '^(cat: .*: (Permission denied|No such file or directory)|dmesg: .*Permission denied|.*su: .*not found)' "$1"
+    rg -aq '^(cat|ls): .*: (Permission denied|No such file or directory)|dmesg: .*Permission denied|.*su: .*not found' "$1"
 }
 
 capture_file() {
@@ -37,7 +37,12 @@ capture_file /proc/iomem proc-iomem.txt
 capture_file /proc/meminfo proc-meminfo.txt
 capture_file /sys/firmware/fdt live-fdt.dtb
 capture_file /sys/fs/pstore/pmsg-ramoops-0 pmsg-ramoops-0.txt
-capture_file /proc/memblock_reserved proc-memblock-reserved.txt
+capture_file /proc/mtk_memcfg/memory_layout proc-mtk-memory-layout.txt
+capture_file /proc/mtk_memcfg/reserve_memory proc-mtk-reserve-memory.txt
+capture_file /proc/mtk_memcfg/total_reserve proc-mtk-total-reserve.txt
+capture_file /proc/mtk_memcfg/memblock_reserved proc-mtk-memblock-reserved.txt
+capture_file /sys/kernel/debug/memblock/memory debugfs-memblock-memory.txt
+capture_file /sys/kernel/debug/memblock/reserved debugfs-memblock-reserved.txt
 
 pstore_tmp="$out/.pstore-files.tmp"
 "$adb_bin" exec-out ls -1 /sys/fs/pstore >"$pstore_tmp" 2>"$out/pstore-files.stderr" || true
@@ -53,6 +58,22 @@ if ! has_remote_error "$pstore_tmp" && [[ -s "$pstore_tmp" ]]; then
     done <"$out/pstore-files.txt"
 else
     mv "$pstore_tmp" "$out/pstore-files.stderr"
+fi
+
+cma_tmp="$out/.cma-debugfs-files.tmp"
+"$adb_bin" exec-out ls -1 /sys/kernel/debug/cma >"$cma_tmp" 2>"$out/cma-debugfs-files.stderr" || true
+if has_remote_error "$cma_tmp" || [[ ! -s "$cma_tmp" ]]; then
+    "$adb_bin" exec-out su -c 'ls -1 /sys/kernel/debug/cma' >"$cma_tmp" 2>"$out/cma-debugfs-files.stderr" || true
+fi
+if ! has_remote_error "$cma_tmp" && [[ -s "$cma_tmp" ]]; then
+    mv "$cma_tmp" "$out/cma-debugfs-files.txt"
+    while IFS= read -r entry; do
+        [[ "$entry" =~ ^cma-[0-9]+$ ]] || continue
+        capture_file "/sys/kernel/debug/cma/$entry/base_pfn" "$entry-base-pfn.txt"
+        capture_file "/sys/kernel/debug/cma/$entry/count" "$entry-count.txt"
+    done <"$out/cma-debugfs-files.txt"
+else
+    mv "$cma_tmp" "$out/cma-debugfs-files.stderr"
 fi
 
 tmp="$out/.dmesg.tmp"

@@ -4,12 +4,12 @@ Status: working evidence note; do not use as an XNU allocator map yet.
 
 ## Evidence used
 
-- `device/oppo_lfdt.dts`: decompiled FDT captured from `/sys/firmware/fdt` on
+- `../device/oppo_lfdt.dts`: decompiled FDT captured from `/sys/firmware/fdt` on
   the OPPO A15s Android boot. This is the live FDT Linux received.
-- `device/iomem.txt`: captured Linux `/proc/iomem` resource map. Treat it as
+- `../device/iomem.txt`: captured Linux `/proc/iomem` resource map. Treat it as
   same-boot evidence only if its capture was from the same Android boot as the
   live FDT.
-- `device/base-dtb.dts` and `device/oppo6765_1.dts`: boot-image base tree and
+- `../device/base-dtb.dts` and `../device/oppo6765_1.dts`: boot-image base tree and
   selected DTBO candidate. Applying entry 1 succeeded. The live tree contains
   bootloader-populated data, so it is the primary source for this comparison.
 
@@ -23,7 +23,7 @@ two size cells. This declares the span `[0x40000000, 0x140000000)` (4 GiB).
 The base DTB instead declared `[0x40000000, 0x60000000)` (512 MiB); the
 bootloader-expanded live value is the relevant one for the Android boot.
 
-The complete `device/iomem.txt` does **not** stop at `0xbfffffff`. Its
+The complete `../device/iomem.txt` does **not** stop at `0xbfffffff`. Its
 `System RAM` resources extend through `0x13fffefff`, consistent with the
 live FDT's upper limit apart from the final 4 KiB reservation at
 `0x13ffff000-0x13fffffff`. The `System RAM` resources are fragmented:
@@ -45,7 +45,7 @@ live FDT's upper limit apart from the final 4 KiB reservation at
 resource map, although it lies inside the live FDT's declared span. It must
 not be treated as allocatable DRAM based on the `/memory` node alone.
 
-The captured `device/meminfo.txt` reports `MemTotal: 3907256 kB`,
+The captured `../device/meminfo.txt` reports `MemTotal: 3907256 kB`,
 `CmaTotal: 274432 kB` (268 MiB), and `CmaFree: 65088 kB`. These are runtime
 totals, not physical addresses. In particular, `CmaTotal` cannot identify the
 base of a CMA area or be equated with the much larger `zone-movable-cma-memory`
@@ -54,7 +54,7 @@ request in the FDT.
 ### Follow-up runtime capture (2026-11-08)
 
 The successful ADB capture at
-`cph2179-runtime-20261108-132219/` identifies the Android device as CPH2179
+`../out/cph2179-runtime-20261108-132219/` identifies the Android device as CPH2179
 and records a boot ID. The matching boot ID in the earlier successful captures
 shows these files came from the same Android boot. The live FDT is a valid
 181143-byte FDT v17; the first collector revision mistakenly filed it as a
@@ -62,7 +62,7 @@ shows these files came from the same Android boot. The live FDT is a valid
 found`. It has been restored to `live-fdt.dtb` in the capture directory.
 
 Cross-checks against the earlier captures pass: the current `/proc/iomem` is
-byte-identical to `device/iomem.txt`; the complete `memory/mblock_info`
+byte-identical to `../device/iomem.txt`; the complete `memory/mblock_info`
 property is identical to the earlier live FDT; and `/memory/reg`, the fixed
 framebuffer range, and ZMC requested size agree. This confirms the existing
 FDT and `/proc/iomem` map describe the same memory layout for the captured
@@ -73,15 +73,77 @@ candidate interval remains inside `System RAM`, and the CMA address cannot be
 recovered from its total size.
 
 The readable `/proc/meminfo` reports `MemTotal: 3907256 kB` and
-`CmaTotal: 274432 kB`; `CmaFree` is 42188 kB. `/proc/memblock_reserved` does
-not exist on this build. The collected dmesg is a late ring-buffer snapshot
-whose first visible timestamp is about 10 hours after boot; it contains no
-ZMC, reserved-memory, SSPM/SCP, or connectivity allocator messages. It cannot
-confirm early-boot allocation addresses. The 48-byte pmsg capture has no
-`OPPO6765/SHIM`, XNU, or launchd marker, so none of the boot milestones
-advances. The collector was corrected to recognize text errors without
-misclassifying arbitrary binary FDT strings and to avoid dumping generic Wi-Fi
-logs that contain unrelated network identifiers.
+`CmaTotal: 274432 kB`. The earlier collector queried the wrong path for
+`memblock_reserved`: the available A15 source creates
+`/proc/mtk_memcfg/memblock_reserved`, and only when
+`CONFIG_MTK_ENG_BUILD` is enabled. Therefore, the failed read of
+`/proc/memblock_reserved` did not establish whether that diagnostic exists on
+the phone.
+The captured dmesg is a late ring-buffer snapshot whose first visible timestamp
+is about 10 hours after boot; it contains no allocator messages. The later
+capture at `cph2179-runtime-20261108-140815/` successfully listed pstore and
+retrieved `console-ramoops` (262132 bytes), which contains early Android startup
+logs through about 86 seconds. Searches of that console record found no ZMC,
+reserved-memory, CMA, SSPM/SCP-share, or connectivity reservation address
+messages, so the dynamic placements remain unconfirmed. Its pmsg file is still
+48 bytes and contains no `OPPO6765/SHIM`, XNU, or launchd marker. This advances
+none of the boot milestones. The collector was corrected to recognize text
+errors without misclassifying arbitrary binary FDT strings and to avoid
+dumping generic Wi-Fi logs that contain unrelated network identifiers.
+
+A later capture at `cph2179-runtime-20261108-140406/` is still the same
+Android boot. Its `MemTotal` and `CmaTotal` are unchanged; `CmaFree` is now
+38108 kB. The pmsg remains 48 bytes with no boot-stage marker. Listing
+`/sys/fs/pstore` first returned `Permission denied`; a subsequent capture
+retrieved the console record using the corrected `ls` retry.
+
+The 14:08 capture is also the same Android boot and has identical FDT and
+`/proc/iomem` bytes to the 13:22 capture. `CmaFree` is now 37268 kB; this is
+runtime variation and does not locate the CMA area.
+
+In the reference A15 kernel, `/proc/mtk_memcfg/memory_layout` is created
+independently of the engineering-only `memblock_reserved` file. It prints
+registered reserved-memory intervals and intervening kernel ranges, so it may
+resolve SSPM/SCP/connectivity addresses directly. The same driver also creates
+`reserve_memory` and `total_reserve` there. When `CONFIG_CMA_DEBUGFS` and
+mounted debugfs are available, `/sys/kernel/debug/cma/cma-N/base_pfn` and
+`count` expose each CMA area's physical base and size. The collector probes
+these paths, the nested `memblock_reserved` path, and
+`/sys/kernel/debug/memblock/{memory,reserved}`. The debugfs files the user
+found are the kernel's live memblock region lists and should let us compare
+memory and reserved intervals directly with the live FDT and `/proc/iomem`.
+The capture at `cph2179-runtime-20261108-142734/` now confirms that the phone
+exposes both memblock debugfs lists. `debugfs-memblock-memory.txt` reports ten
+usable memblock memory intervals, and `debugfs-memblock-reserved.txt` reports
+33 reserved intervals. `/proc/iomem` from that capture is consistent: the
+memory intervals align with its fragmented `System RAM` entries, while
+`0xbf000000-0xbf2fffff` remains a separately labeled AXI bus range.
+
+The same capture's `/proc/mtk_memcfg/reserve_memory` names reservations and
+sizes. Its SSPM share (1,114,112 bytes), SCP share (3 MiB), and consys reserve
+(4 MiB) match memblock reserved intervals exactly:
+
+| Reservation | Confirmed interval | Evidence |
+| --- | --- | --- |
+| SCP share | `[0x8f000000, 0x8f300000)` | memblock reserved #6; 3 MiB |
+| SSPM share | `[0x9faf0000, 0x9fc00000)` | memblock reserved #7; 1.0625 MiB |
+| Connectivity (`consys`) | `[0xbe000000, 0xbe400000)` | memblock reserved #14; 4 MiB |
+| Wi-Fi request | address unresolved | reserve file reports 3 MiB, but no 3 MiB interval is uniquely attributable from the current lists |
+
+The fixed framebuffer and other bootloader mblock reservations also appear in
+the reserved list. A large reserved interval at
+`[0x12aa00000, 0x13fc00000)` is directly confirmed as reserved by memblock,
+but its owner is not established by these files. Do not label it CMA solely
+from `CmaTotal`: that total is 274432 kB, and CMA debugfs is absent on this
+boot (`/sys/kernel/debug/cma` does not exist). The `memory_layout` proc file
+exists but returns `Need kptr_restrict`, so it did not provide names/addresses.
+The engineering-only `/proc/mtk_memcfg/memblock_reserved` file is absent.
+
+This is enough to stop guessing about the three exact dynamic placements and
+to remove those ranges from any XNU candidate allocator map. It is not enough
+to choose an XNU free-memory range: the remaining holes/reservations and the
+large high-memory carveout still need provenance, and Linux's current memblock
+state is not automatically a safe handoff map for a different kernel.
 
 ## Bootloader `mblock_info` decoded from live FDT
 
@@ -298,11 +360,16 @@ same kernel build/configuration.
   `reserved_mem:` prefix on its diagnostic paths; this is useful if enabled,
   but it is not guaranteed to print a complete list in every build.
 - If the running kernel was built with `CONFIG_MTK_ENG_BUILD`,
-  `drivers/misc/mediatek/mem/mtk_memcfg.c` creates `/proc/memblock_reserved`.
+  `drivers/misc/mediatek/mem/mtk_memcfg.c` creates
+  `/proc/mtk_memcfg/memblock_reserved`.
   This reports Linux memblock reservations and, where recorded, the kernel
   call-site backtraces that reserved them. Capturing it can identify ranges
   missing from `/proc/iomem` labels and help distinguish bootloader
   reservations from kernel allocations.
+- The same driver creates `/proc/mtk_memcfg/memory_layout` and
+  `/proc/mtk_memcfg/reserve_memory`; on this phone `memory_layout` is blocked
+  by `kptr_restrict`, while `reserve_memory` supplied names and sizes.
+- CMA debugfs is absent in the 14:27 CPH2179 capture; no CMA base was obtained.
 
 The available `oppo6765_defconfig` enables `CONFIG_MTK_MET_MEM_ALLOC=y`, which
 is consistent with the live FDT's 0x110000 SSPM request. The config does not
@@ -311,31 +378,28 @@ values and whether this config matches the phone's running kernel remain
 unverified.
 
 If the phone can boot Android, capture the full kernel log as early as possible
-after boot and, if present,
-`/proc/memblock_reserved` before attempting the shim again. For example:
-`adb shell su -c 'dmesg' > cph2179-dmesg.txt` and
-`adb shell su -c 'cat /proc/memblock_reserved' > cph2179-memblock-reserved.txt`
-(use `adb shell` without `su -c` if root is not needed). Search the log for
+after boot and the live memblock debugfs files with
+`tools/cph2179-capture-runtime.sh`. Search the log for
 `zmc`, `reserved_mem`, `consys`, `wifi-reserve`, `sspm`, and `scp`; preserve the
 surrounding lines and physical addresses. Keep captures private if they
 contain serials or other identifiers. If ADB is unavailable, save the
 device's existing kernel log or capture UART output. The host-side ADB capture
-is now present, but its dmesg ring began long after early boot and the build
-does not expose `/proc/memblock_reserved`; allocator ownership and several
-dynamic addresses remain unresolved. The agent workspace itself still has no
+is now present, but its dmesg ring began long after early boot. The phone
+exposes `/sys/kernel/debug/memblock/{memory,reserved}`; three dynamic request
+addresses now match exactly, while the Wi-Fi address and large high-memory
+reservation owner remain unresolved. The agent workspace itself still has no
 USB passthrough, so new live reads must be collected on the host and placed in
 the shared workspace.
 
 ## What is and is not established
 
-- Established for the captured Android boot: the live FDT DRAM span, the fixed
-  reserved-memory `reg` intervals, and the Linux `System RAM`/resource ranges
-  listed above.
-- Not established: runtime-confirmed addresses for the dynamic requests (the
-  source-based candidate placements above remain inferences); how every
-  vendor reservation inside `System RAM` affects Linux allocation; whether
-  the older captures without boot IDs came from this exact boot; and a safe
-  XNU allocator range.
+- Established for the captured Android boot: the live FDT DRAM span, Linux
+  memblock memory and reserved intervals, fixed reserved-memory ranges, and
+  exact locations for SCP share, SSPM share, and consys.
+- Not established: the Wi-Fi reservation's address, the owner of the large
+  high-memory reserved interval, how every vendor reservation affects Linux
+  allocation, whether older captures without boot IDs came from this exact
+  boot, and a safe XNU allocator range.
 - The captured `CmaTotal` is smaller than the FDT's 0x7fc00000
   `zone-movable-cma-memory` request. Their relationship is unknown; do not
   assume they describe the same pool.

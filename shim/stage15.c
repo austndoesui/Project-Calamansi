@@ -7,6 +7,8 @@
 
 static uint32_t usb_diag[16];
 static unsigned started, connected, in_fault, preflight_ok;
+static unsigned dtr_tracking;
+static uint64_t dtr_since;
 
 static uint64_t ticks(void)
 {
@@ -22,6 +24,24 @@ static uint64_t hz(void)
     return n ? n : 13000000u;
 }
 
+static unsigned dtr_stable(void)
+{
+	if (!usb_online() || !(usb_diag[8] & 1u)) {
+		dtr_tracking = 0;
+		dtr_since = 0;
+		return 0;
+	}
+	uint64_t t = ticks();
+	if (!dtr_tracking) {
+		dtr_since = t;
+		dtr_tracking = 1;
+		return 0;
+	}
+	uint64_t holdoff = hz() / 4u;
+	if (!holdoff) holdoff = 1;
+	return t - dtr_since >= holdoff;
+}
+
 /* Bounded and allocation-free; no retries after a bulk FIFO write. */
 static void drain_ms(unsigned ms)
 {
@@ -29,8 +49,9 @@ static void drain_ms(unsigned ms)
     const uint64_t start = ticks(), duration = hz() / 1000u * ms;
     while (ticks() - start < duration) {
         usb_poll();
-        const uint8_t *frame = cactus_trace_peek();
-        if (frame && usb_send_budgeted(frame, CACTUS_TRACE_BYTES) == 1)
+		const uint8_t *frame = cactus_trace_peek();
+		if (frame && dtr_stable() &&
+		    usb_send_budgeted(frame, CACTUS_TRACE_BYTES) == 1)
             cactus_trace_pop();
         wdt_ping();
     }
@@ -51,16 +72,17 @@ void stage15_begin(uintptr_t dtb)
 {
     cactus_trace_reset(0xca150001u);
     started = 1;
-    preflight_ok = in_fault = connected = 0;
+	preflight_ok = in_fault = connected = dtr_tracking = 0;
+	dtr_since = 0;
     cactus_trace_emit(S15_ENTRY, dtb, (uintptr_t)stage15_begin, 0);
     connected = usb_init(usb_diag);
     if (!connected) return;
     const uint64_t start = ticks(), timeout = hz() * 6u;
     while (ticks() - start < timeout) {
         usb_poll();
-        /* Preserve earliest boot records until the Windows CDC reader
-         * opens COM and asserts DTR, so EP1 writes are not discarded. */
-        if (usb_online() && (usb_diag[8] & 1u)) break;
+		/* Preserve earliest records until DTR has stayed asserted long
+		 * enough for the host tty to finish configuring its read path. */
+		if (dtr_stable()) break;
         wdt_ping();
     }
     stage15_mark(S15_USB_READY, usb_online(), usb_diag[8], usb_diag[2]);

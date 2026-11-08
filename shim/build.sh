@@ -25,6 +25,9 @@ AUTO_BOOT_MODE="${AUTO_BOOT_MODE:-off}"
 EARLY_PSTORE="${EARLY_PSTORE:-0}"
 EARLY_WDT="${EARLY_WDT:-0}"
 ENTRY_PROBE="${ENTRY_PROBE:-0}"
+OPPO_ENTRY_ONLY="${OPPO_ENTRY_ONLY:-0}"
+OPPO_CDC_HEARTBEAT="${OPPO_CDC_HEARTBEAT:-0}"
+OPPO_STOCK_BOOT="${OPPO_STOCK_BOOT:-../OPPOA15S/boot.img}"
 TRACE_PMSG="${TRACE_PMSG:-0}"
 TRACE_WDT="${TRACE_WDT:-0}"
 STAGE15="${STAGE15:-0}"
@@ -35,12 +38,30 @@ PAYLOAD="${1:-}"
 if [ "$STAGE15" = 1 ] && [ "$BOARD" != oppo6765 ]; then
     echo "Stage 15 is oppo6765-only" >&2; exit 1
 fi
+if [ "$OPPO_ENTRY_ONLY" = 1 ]; then
+    if [ "$BOARD" != oppo6765 ] || [ "$TRACE_PMSG" != 1 ] || [ -n "$PAYLOAD" ] ||
+       [ "$MODE" != boot ] || [ "$ENTRY_PROBE" != 0 ] || [ "$RESET_ONLY" != 0 ] ||
+       [ "$SELFTEST" != 0 ] || [ "$EARLY_WDT" != 0 ] || [ "$STAGE15" != 0 ] ||
+       [ "$STAGE15_EARLY" != 0 ] || [ "$RTC_PROBE" != 0 ]; then
+        echo "OPPO_ENTRY_ONLY=1 requires BOARD=oppo6765 TRACE_PMSG=1 and a plain boot with no payload or other probes" >&2
+        exit 1
+    fi
+fi
+if [ "$OPPO_CDC_HEARTBEAT" = 1 ]; then
+    if [ "$BOARD" != oppo6765 ] || [ "$TRACE_PMSG" != 1 ] || [ -n "$PAYLOAD" ] ||
+       [ "$MODE" != boot ] || [ "$ENTRY_PROBE" != 0 ] || [ "$RESET_ONLY" != 0 ] ||
+       [ "$SELFTEST" != 0 ] || [ "$EARLY_WDT" != 0 ] || [ "$STAGE15" != 0 ] ||
+       [ "$STAGE15_EARLY" != 0 ] || [ "$RTC_PROBE" != 0 ] || [ "$OPPO_ENTRY_ONLY" != 0 ]; then
+        echo "OPPO_CDC_HEARTBEAT=1 requires BOARD=oppo6765 TRACE_PMSG=1 and a plain boot with no payload or other probes" >&2
+        exit 1
+    fi
+fi
 if [ "$STAGE15_DIAG" = 1 ] && [ "$STAGE15" != 1 ]; then
     echo "STAGE15_DIAG requires STAGE15=1" >&2; exit 1
 fi
 case "$STAGE15_EARLY" in
-    0|1|2|3|4) ;;
-    *) echo "STAGE15_EARLY must be 0..4" >&2; exit 1 ;;
+    0|1|2|3|4|5) ;;
+    *) echo "STAGE15_EARLY must be 0..5" >&2; exit 1 ;;
 esac
 if [ "$STAGE15_EARLY" != 0 ] && { [ "$BOARD" != oppo6765 ] || [ "$STAGE15" != 1 ]; }; then
     echo "STAGE15_EARLY requires BOARD=oppo6765 STAGE15=1" >&2; exit 1
@@ -57,8 +78,7 @@ NM="${NM:-aarch64-linux-gnu-nm}"
 
 if [ "$BOARD" = oppo6765 ]; then
 	CFLAGS="-O2 -ffreestanding -nostdlib -fno-pic -mgeneral-regs-only -mstrict-align -fno-stack-protector -fno-omit-frame-pointer -Wall -Wextra -DBOARD_OPPO6765 -DCACTUS_DEBUG=1"
-	DTB="${DTB:-../../device/live-fdt.dtb}"
-	DTBO="${DTBO:-../../device/dtbo.img}"
+	# DT table and ramdisk are resolved from OPPO_STOCK_BOOT below.
 	MBOOTIMG="${MBOOTIMG:-mkbootimg}"
 	BASE=0x40078000
 	KERNEL_OFFSET=0x00008000
@@ -90,7 +110,7 @@ case "${AUTO_BOOT_MODE:-off}" in
 	*) echo "error: invalid AUTO_BOOT_MODE: $AUTO_BOOT_MODE" >&2; exit 1 ;;
 esac
 
-CFLAGS="$CFLAGS -DSHIM_SELFTEST=$SELFTEST -DAUTO_BOOT_TARGET=$AUTO_BOOT_TARGET -DSHIM_RESET_ONLY=$RESET_ONLY -DSHIM_RTC_PROBE=$RTC_PROBE -DSHIM_EARLY_PSTORE=$EARLY_PSTORE -DSHIM_EARLY_WDT=$EARLY_WDT -DSHIM_ENTRY_PROBE=$ENTRY_PROBE -DCACTUS_PMSG_TRACE=$TRACE_PMSG -DSHIM_TRACE_WDT=$TRACE_WDT"
+CFLAGS="$CFLAGS -DSHIM_SELFTEST=$SELFTEST -DAUTO_BOOT_TARGET=$AUTO_BOOT_TARGET -DSHIM_RESET_ONLY=$RESET_ONLY -DSHIM_RTC_PROBE=$RTC_PROBE -DSHIM_EARLY_PSTORE=$EARLY_PSTORE -DSHIM_EARLY_WDT=$EARLY_WDT -DSHIM_ENTRY_PROBE=$ENTRY_PROBE -DSHIM_OPPO_ENTRY_ONLY=$OPPO_ENTRY_ONLY -DSHIM_OPPO_CDC_HEARTBEAT=$OPPO_CDC_HEARTBEAT -DCACTUS_PMSG_TRACE=$TRACE_PMSG -DSHIM_TRACE_WDT=$TRACE_WDT"
 if [ "$STAGE15" = 1 ]; then
     CFLAGS="$CFLAGS -DSHIM_STAGE15=1 -DSHIM_STAGE15_DIAG=$STAGE15_DIAG -DCACTUS_TRACE_STAGE=15"
 fi
@@ -101,6 +121,10 @@ if [ "$SELFTEST" = 1 ] && [ -z "${TAG:-}" ]; then
 	TAG=selftest
 elif [ "$ENTRY_PROBE" = 1 ] && [ -z "${TAG:-}" ]; then
 	TAG=entry-probe
+elif [ "$OPPO_ENTRY_ONLY" = 1 ] && [ -z "${TAG:-}" ]; then
+	TAG=entry-only
+elif [ "$OPPO_CDC_HEARTBEAT" = 1 ] && [ -z "${TAG:-}" ]; then
+	TAG=cdc-heartbeat
 elif [ "$RESET_ONLY" != 0 ] && [ -z "${TAG:-}" ]; then
 	if [ "$RESET_ONLY" = 1 ]; then TAG=reset; else TAG=reset$RESET_ONLY; fi
 elif [ "$RTC_PROBE" = 1 ] && [ -z "${TAG:-}" ]; then
@@ -110,8 +134,18 @@ fi
 OUTDIR="out/$BOARD"
 mkdir -p "$OUTDIR"
 
-[ -f "$DTB" ] || { echo "error: DTB not found: $DTB" >&2; exit 1; }
-if [ -n "$DTBO" ]; then
+if [ "$BOARD" = oppo6765 ]; then
+	[ -f "$OPPO_STOCK_BOOT" ] || { echo "error: stock boot image not found: $OPPO_STOCK_BOOT (set OPPO_STOCK_BOOT)" >&2; exit 1; }
+	STOCK_DIR="$OUTDIR/stock-v2"
+	python3 ./extract_android_boot_v2.py "$OPPO_STOCK_BOOT" "$STOCK_DIR"
+	DTB="$STOCK_DIR/dt-table.img"
+	STOCK_RAMDISK="$STOCK_DIR/ramdisk.gz"
+	CMDLINE="$(cat "$STOCK_DIR/cmdline.txt")"
+else
+	[ -f "$DTB" ] || { echo "error: DTB not found: $DTB" >&2; exit 1; }
+	CMDLINE="bootopt=64S3,32N2,64N2 androidboot.selinux=permissive buildvariant=user"
+fi
+if [ -n "${DTBO:-}" ]; then
 	[ -f "$DTBO" ] || { echo "error: DTBO not found: $DTBO" >&2; exit 1; }
 fi
 
@@ -120,6 +154,9 @@ SOURCES=(start.S shim.c console.c debug.c pmsg_trace.c watchdog.c bootmode.c mmu
 if [ "$BOARD" = oppo6765 ]; then
     # Runtime memory admission is mandatory even when STAGE15=0.
     SOURCES+=(fdt_ranges.c payload_layout.c)
+fi
+if [ "$OPPO_CDC_HEARTBEAT" = 1 ]; then
+	SOURCES+=(oppo_heartbeat.c cactus_usb.c)
 fi
 if [ "$STAGE15" = 1 ]; then
     SOURCES+=(stage15.c cactus_trace.c cactus_usb.c)
@@ -155,20 +192,29 @@ hex=$($NM "$OUTDIR/shim.elf" | awk '$3=="_end"{print $1}')
 size=$((16#$hex))
 truncate -s "$size" "$OUTDIR/Image"
 
-# Match the stock kernel: gzip Image + appended base DTB.
+# CPH2179 supplies its Android-v2 DT table separately. Appending the live FDT
+# duplicates LK's long runtime bootargs and can trigger its CMDLINE overflow.
 gzip -9 -c "$OUTDIR/Image" > "$OUTDIR/Image.gz"
-cat "$OUTDIR/Image.gz" "$DTB" > "$OUTDIR/Image.gz-dtb"
+if [ "$BOARD" = oppo6765 ]; then
+	KERNEL_IMAGE="$OUTDIR/Image.gz"
+else
+	cat "$OUTDIR/Image.gz" "$DTB" > "$OUTDIR/Image.gz-dtb"
+	KERNEL_IMAGE="$OUTDIR/Image.gz-dtb"
+fi
 
 if [ -n "$PAYLOAD" ]; then
 	[ -f "$PAYLOAD" ] || { echo "error: payload not found: $PAYLOAD" >&2; exit 1; }
 	cp "$PAYLOAD" "$OUTDIR/ramdisk.bin"
 	TAG="${TAG:-xnu}"
 else
-	(cd "$OUTDIR" && rm -rf rd && mkdir rd && cd rd && find . | cpio -o -H newc --quiet | gzip -9 > ../ramdisk.bin)
+	if [ "$BOARD" = oppo6765 ]; then
+		cp "$STOCK_RAMDISK" "$OUTDIR/ramdisk.bin"
+	else
+		(cd "$OUTDIR" && rm -rf rd && mkdir rd && cd rd && find . | cpio -o -H newc --quiet | gzip -9 > ../ramdisk.bin)
+	fi
 	TAG="${TAG:-diag}"
 fi
 
-CMDLINE="bootopt=64S3,32N2,64N2 androidboot.selinux=permissive buildvariant=user"
 if [ "$MODE" = recovery ]; then
 	OUT="$OUTDIR/shim-$TAG-recovery.img"
 	$MBOOTIMG --header_version 1 --kernel "$OUTDIR/Image.gz-dtb" \
@@ -179,7 +225,15 @@ if [ "$MODE" = recovery ]; then
 		--os_version 11.0.0 --cmdline "$CMDLINE" -o "$OUT"
 else
 	OUT="$OUTDIR/shim-$TAG-boot.img"
-	if [ -n "$DTBO" ]; then
+	if [ "$BOARD" = oppo6765 ]; then
+		$MBOOTIMG --header_version 2 --kernel "$KERNEL_IMAGE" \
+			--ramdisk "$OUTDIR/ramdisk.bin" --dtb "$DTB" \
+			--base "$BASE" --kernel_offset "$KERNEL_OFFSET" \
+			--ramdisk_offset "$RAMDISK_OFFSET" --second_offset "$SECOND_OFFSET" \
+			--tags_offset "$TAGS_OFFSET" --dtb_offset "$DTB_OFFSET" \
+			--pagesize "$PAGESIZE" --os_version 10.0.0 \
+			--os_patch_level 2023-02 --cmdline "$CMDLINE" -o "$OUT"
+	elif [ -n "${DTBO:-}" ]; then
 		$MBOOTIMG --header_version 2 --kernel "$OUTDIR/Image.gz-dtb" \
 			--ramdisk "$OUTDIR/ramdisk.bin" --dtb "$DTBO" \
 			--base "$BASE" --kernel_offset "$KERNEL_OFFSET" \
@@ -203,7 +257,11 @@ HOSTDEF=""
 gcc -O1 -Wall $HOSTDEF -o "$OUTDIR/host_test" console.c host_test.c
 (cd "$OUTDIR" && ./host_test >/dev/null)
 
-ls -l "$OUTDIR/Image" "$OUTDIR/Image.gz-dtb" "$OUTDIR/ramdisk.bin" "$OUT"
+if [ "$BOARD" = oppo6765 ]; then
+	ls -l "$OUTDIR/Image" "$OUTDIR/Image.gz" "$OUTDIR/ramdisk.bin" "$DTB" "$OUT"
+else
+	ls -l "$OUTDIR/Image" "$OUTDIR/Image.gz-dtb" "$OUTDIR/ramdisk.bin" "$OUT"
+fi
 if command -v sha256sum >/dev/null; then
 	sha256sum "$OUT"
 fi

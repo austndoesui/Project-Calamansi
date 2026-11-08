@@ -25,6 +25,19 @@ _start:
 	adr	x1, _stack_top
 	mov	sp, x1
 	adr	x1, vectors
+#if defined(BOARD_OPPO6765) && defined(CACTUS_PMSG_TRACE) && CACTUS_PMSG_TRACE && ((defined(SHIM_OPPO_ENTRY_ONLY) && SHIM_OPPO_ENTRY_ONLY) || (defined(SHIM_OPPO_CDC_HEARTBEAT) && SHIM_OPPO_CDC_HEARTBEAT))
+	/* Record entry before the CurrentEL gate, so even an unsupported entry
+	 * level is distinguishable from an image that never reached _start. */
+	adr	x0, cactus_pmsg_entry_msg
+	mrs	x1, CurrentEL
+	mov	x2, x19
+	mrs	x3, mpidr_el1
+	bl	pmsg_trace_mark
+#if defined(SHIM_OPPO_ENTRY_ONLY) && SHIM_OPPO_ENTRY_ONLY
+4:	wfe
+	b	4b
+#endif
+#endif
 #if defined(BOARD_OPPO6765)
 	mrs	x2, CurrentEL
 	cmp	x2, #0x8
@@ -60,6 +73,11 @@ _start:
 	str	xzr, [x1], #8
 	b	1b
 2:	mov	x0, x19
+#if defined(BOARD_OPPO6765) && defined(SHIM_OPPO_CDC_HEARTBEAT) && SHIM_OPPO_CDC_HEARTBEAT
+	/* CPH2179-only bounded CDC heartbeat; no Cactus console or XNU handoff. */
+	bl	oppo_cdc_heartbeat_main
+	b	3f
+#endif
 #if defined(BOARD_OPPO6765) && defined(SHIM_STAGE15_EARLY) && SHIM_STAGE15_EARLY
 	/* Minimum real-shim entry probe: stack, vectors and BSS only.
 	 * No debug RAM, watchdog, framebuffer or XNU before USB. */
@@ -74,6 +92,12 @@ _start:
 	mov	x2, x19
 	mrs	x3, mpidr_el1
 	bl	pmsg_trace_mark
+	#if defined(SHIM_OPPO_ENTRY_ONLY) && SHIM_OPPO_ENTRY_ONLY
+	/* Entry-only CPH2179 probe: keep the marker and avoid board-specific
+	 * console, watchdog, memory allocator, and XNU code. */
+4: 	wfe
+	b	4b
+	#endif
 	mov	x0, x19
 #endif
 	bl	shim_main
@@ -167,6 +191,10 @@ xnu_enter_el1:
 	.section .rodata, "a"
 cactus_pmsg_start_msg:
 	.asciz "shim start"
+cactus_pmsg_entry_msg:
+	.asciz "shim entry before EL gate"
+cactus_pmsg_cdc_msg:
+	.asciz "oppo cdc heartbeat"
 cactus_pmsg_el1_msg:
 	.asciz "xnu el1 reached"
 	.text

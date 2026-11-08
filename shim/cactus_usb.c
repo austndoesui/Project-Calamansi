@@ -1,4 +1,4 @@
-/* Reusable Stage 14 polled MT6765 MUSB USB2 CDC-ACM transport.
+/* Polled MT6765 MUSB USB2 CDC-ACM transport.
  * EP0 logic is copied from the *hardware-positive* Stage 12 source.
  * Isolated bare-metal MMU-off use only; no XNU integration yet. */
 #include "cactus_usb.h"
@@ -95,6 +95,16 @@ static const uint8_t config[] = {
     7,5,0x81,2,64,0,0     /* EP1 IN bulk FS */
 };
 static const uint8_t lang[] = {4,3,0x09,0x04};
+#if defined(BOARD_OPPO6765)
+static const uint8_t vendor[] = {
+    36,3,'P',0,'r',0,'o',0,'j',0,'e',0,'c',0,'t',0,' ',0,
+    'C',0,'a',0,'l',0,'a',0,'m',0,'a',0,'n',0,'s',0,'i',0
+};
+static const uint8_t product[] = {
+    38,3,'O',0,'P',0,'P',0,'O',0,'6',0,'7',0,'6',0,'5',0,' ',0,
+    'C',0,'D',0,'C',0,' ',0,'P',0,'r',0,'o',0,'b',0,'e',0
+};
+#else
 static const uint8_t vendor[] = {
     22,3,'C',0,'a',0,'c',0,'t',0,'u',0,'s',0,' ',0,'L',0,'a',0,'b',0
 };
@@ -102,6 +112,7 @@ static const uint8_t product[] = {
     32,3,'C',0,'a',0,'c',0,'t',0,'u',0,'s',0,' ',0,'S',0,'h',0,'i',0,'m',0,
     ' ',0,'U',0,'S',0,'B',0
 };
+#endif
 static const uint8_t serial[] = {
     10,3,'0',0,'0',0,'0',0,'1',0
 };
@@ -402,8 +413,9 @@ int usb_init(uint32_t *diagnostics)
     serial_state_sent = 0;
     w8(POWER, (uint8_t)(r8(BASE, POWER) & ~SOFTCONN));
 
-    /* Exact PHY device-mode sequence that enumerated on real cactus.
-     * Preserve originals and restore after the bounded probe. */
+    /* MT6765 USB2 PHY device-mode sequence. Preserve originals and restore
+     * after the bounded probe. CPH2179's matching A15 kernel maps USB at
+     * 0x11200000 and the PHY at 0x11cc0000; this is not a CPH hardware pass. */
     phy_old18 = r32(PHY, 0x18);
     phy_old1c = r32(PHY, 0x1c);
     phy_old20 = r32(PHY, 0x20);

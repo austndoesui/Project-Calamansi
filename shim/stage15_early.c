@@ -42,6 +42,8 @@ enum {
     EVT_FDT_AFTER   = 0x1588,
     EVT_DRAM_BANK   = 0x1589,
     EVT_DONE        = 0x158a,
+    EVT_FDT_RESV_SUMMARY = 0x158b,
+    EVT_FDT_RESV_RANGE   = 0x158c,
     EVT_EXCEPTION   = 0x15ef,
     EVT_EXC_STATE   = 0x15ee,
 };
@@ -50,6 +52,8 @@ static uint32_t diagnostics[16];
 static unsigned connected, in_fault, running;
 static uint32_t heartbeat;
 static uint64_t ticks_per_second;
+static uint64_t dtr_since;
+static unsigned dtr_tracking;
 
 static uint64_t now(void)
 {
@@ -63,7 +67,21 @@ static void drain(void)
     if (!connected) return;
     usb_poll();
     /* Keep first entry record in RAM until a Windows CDC client opens. */
-    if (!usb_online() || !(diagnostics[8] & 1u)) return;
+    if (!usb_online() || !(diagnostics[8] & 1u)) {
+        dtr_tracking = 0;
+        dtr_since = 0;
+        return;
+    }
+    uint64_t t = now();
+    if (!dtr_tracking) {
+        dtr_since = t;
+        dtr_tracking = 1;
+        return;
+    }
+    /* Give the host time to finish opening/configuring the tty after DTR. */
+    uint64_t stable_ticks = ticks_per_second / 4u;
+    if (!stable_ticks) stable_ticks = 1;
+    if (t - dtr_since < stable_ticks) return;
     const uint8_t *frame = cactus_trace_peek();
     if (frame && usb_send_budgeted(frame, CACTUS_TRACE_BYTES) == 1)
         cactus_trace_pop();
@@ -103,6 +121,8 @@ void stage15_early_main(uintptr_t dtb)
     if (!ticks_per_second) ticks_per_second = 13000000u;
     cactus_trace_reset(0xca15e000u + SHIM_STAGE15_EARLY);
     heartbeat = in_fault = connected = running = 0;
+    dtr_since = 0;
+    dtr_tracking = 0;
     record(EVT_ENTRY, dtb, el, mpidr);
     connected = usb_init(diagnostics);
     record(EVT_USB_INIT, connected, diagnostics[1], diagnostics[2]);
@@ -140,6 +160,19 @@ void stage15_early_main(uintptr_t dtb)
         for (unsigned i = 0; i < info.memory_count; ++i)
             record(EVT_DRAM_BANK, i, info.memory[i].base, info.memory[i].size);
     }
+#if SHIM_STAGE15_EARLY >= 5
+    if (!parse_result) {
+        /* Report only fixed reservations; dynamic size requests have no base. */
+        record(EVT_FDT_RESV_SUMMARY, info.reserved_count,
+               info.initrd_start, info.initrd_end);
+        pump(20);
+        for (unsigned i = 0; i < info.reserved_count; ++i) {
+            record(EVT_FDT_RESV_RANGE, i,
+                   info.reserved[i].base, info.reserved[i].size);
+            pump(20);
+        }
+    }
+#endif
     pump(1250);
 #endif
     pump(9000);
