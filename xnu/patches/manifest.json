@@ -813,6 +813,13 @@
       "source": "xnu/patches/devices/cactus/0114-cactus-mockfs-vnode-read.patch",
       "upstream_name": "0114-cactus-mockfs-vnode-read-stage79.patch",
       "sha256": "3ace18782b90c5b2cf41aafd3931d90f5fdfa9dc458c2481124b50b547adab3c"
+    },
+    {
+      "order": 115,
+      "scope": "device-oppo6765",
+      "source": "xnu/patches/devices/oppo6765/0115-oppo6765-machine-config.patch",
+      "upstream_name": "0115-oppo6765-machine-config.patch",
+      "sha256": "767290357c5ab927b4cf2d54e62bb9857e699b9e692285f871f05c2acf66d9a5"
     }
   ]
 }

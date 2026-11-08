@@ -11,6 +11,10 @@ on:
         default: DEVELOPMENT
       machine_config:
         description: xnu MACHINE_CONFIG
+        type: choice
+        options:
+          - CACTUS
+          - OPPO6765
         default: CACTUS
       keep_going:
         description: make -k (collect all compile errors in one run)
@@ -73,7 +77,7 @@ jobs:
 
           path = Path('dxb/build.sh')
           old = 'ARCHS="x86_64 arm64e" VALID_ARCHS="x86_64 arm64e"'
-          if os.environ['MACHINE_CONFIG'] == 'CACTUS':
+          if os.environ['MACHINE_CONFIG'] in ('CACTUS', 'OPPO6765'):
               new = ('ARCHS="arm64" VALID_ARCHS="arm64" '
                      "OTHER_CFLAGS='$(inherited) -mcpu=cortex-a53 -mno-outline-atomics'")
           else:
@@ -119,13 +123,13 @@ jobs:
           MAKEFLAGS: ${{ inputs.keep_going == 'false' && '' || '-k' }}
         run: |
           set -o pipefail
-          bash build.sh 2>&1 | tee ../cactus-build.log
+          bash build.sh 2>&1 | tee ../xnu-build.log
           if [ "$MACHINE_CONFIG" = CACTUS ]; then
             python3 - <<'PY'
           from pathlib import Path
           import re
 
-          output = Path('../cactus-build.log').read_text(errors='replace')
+          output = Path('../xnu-build.log').read_text(errors='replace')
           output = re.sub(r'\x1b\[[0-9;]*m', '', output)
           required = (
               '0100-cactus-pid1-status-stage65.patch',
@@ -153,6 +157,19 @@ jobs:
           if failures:
               raise SystemExit('Required Cactus patches failed: ' + ', '.join(failures))
           print('REQUIRED CACTUS PATCHES APPLIED:', ', '.join(required))
+          PY
+          elif [ "$MACHINE_CONFIG" = OPPO6765 ]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          output = Path('../xnu-build.log').read_text(errors='replace')
+          name = '0115-oppo6765-machine-config.patch'
+          skipped = re.search(r'Skipping patch\s+[^\n]*' + re.escape(name), output)
+          applied = re.search(r'Applying patch:\s+[^\n]*' + re.escape(name), output)
+          if skipped or not applied:
+              raise SystemExit(name + ': ' + ('SKIPPED' if skipped else 'NOT APPLIED'))
+          print('REQUIRED OPPO PATCH APPLIED:', name)
           PY
           fi
 
