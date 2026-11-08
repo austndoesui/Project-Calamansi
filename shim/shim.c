@@ -24,7 +24,7 @@
 #include "ufs.h"
 #endif
 
-#if !defined(BOARD_CACTUS)
+#if !defined(BOARD_OPPO6765)
 #define IMEM_RESTART_REASON	0x146aa65cUL	/* qcom,msm-imem restart_reason@65c */
 #define RESTART_BOOTLOADER	0x77665500U
 #define PSHOLD			0x0c264000UL
@@ -139,12 +139,12 @@ static void __attribute__((noreturn)) reset(unsigned after_s)
 	dbg_flush();
 	__asm__ volatile("dsb sy" ::: "memory");
 
-#if !defined(BOARD_CACTUS)
+#if !defined(BOARD_OPPO6765)
 	wr32(IMEM_RESTART_REASON, RESTART_BOOTLOADER);
 	__asm__ volatile("dsb sy" ::: "memory");
 #endif
 	smc(PSCI_SYSTEM_RESET, 0, 0, 0);
-#if !defined(BOARD_CACTUS)
+#if !defined(BOARD_OPPO6765)
 	wr32(PSHOLD, 0);
 #endif
 
@@ -275,7 +275,7 @@ static void __attribute__((unused)) test_smp(void)
 
 	for (int i = 1; i < NR_CPUS; i++)
 		ret[i] = smc(PSCI_CPU_ON,
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 			((uint64_t)(i / 4) << 8) | (i % 4),
 #else
 			(uint64_t)i << 8,
@@ -286,7 +286,7 @@ static void __attribute__((unused)) test_smp(void)
 		char label[] = "CPU0";
 		label[3] = '0' + i;
 		uint64_t target =
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 			((uint64_t)(i / 4) << 8) | (i % 4);
 #else
 			(uint64_t)i << 8;
@@ -471,7 +471,7 @@ static void print_cpu(uint64_t dtb)
 
 void shim_main(uint64_t dtb)
 {
-#if defined(BOARD_CACTUS) && SHIM_ENTRY_PROBE
+#if defined(BOARD_OPPO6765) && SHIM_ENTRY_PROBE
 	/* Isolated, one-shot framebuffer marker. LK may leave the panel OFF;
 	 * absence of a visible marker is inconclusive. No RTC, watchdog,
 	 * pstore, DT parsing, or payload accesses occur on this path. */
@@ -520,7 +520,7 @@ void shim_main(uint64_t dtb)
 	con_clear(RED);
 	print_cpu(dtb);
 
-#if defined(BOARD_CACTUS) && SHIM_RTC_PROBE
+#if defined(BOARD_OPPO6765) && SHIM_RTC_PROBE
 	uint16_t pdn1 = 0;
 	int rtc_rc = bootmode_probe(&pdn1);
 	con_hex2("RTC", "rc=", (uint32_t)rtc_rc, "pdn1=", pdn1);
@@ -556,7 +556,7 @@ void shim_main(uint64_t dtb)
 	con_skip();
 #endif
 
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 	mark("done");
 	con_str("DIAG", "finished, resetting");
 	con_str("RESET", "hold VOL DOWN");

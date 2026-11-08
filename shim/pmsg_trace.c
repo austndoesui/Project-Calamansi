@@ -1,5 +1,5 @@
 /*
- * Mirror early cactus milestones into Linux 4.9 ramoops pmsg.
+ * Mirror early MT6765 shim milestones into Linux 4.9 ramoops pmsg.
  *
  * Recovery reports 0xe0000 bytes at 0x47c90000, pmsg_size=0x10000,
  * ecc=0, and uses a 12-byte persistent_ram_buffer header. The pmsg zone
@@ -11,7 +11,7 @@
  */
 #include "pmsg_trace.h"
 
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 
 #define PMSG_BASE 0x47d60000UL
 #define PMSG_ZONE_SIZE 0x10000U
@@ -57,7 +57,7 @@ void pmsg_trace_mark(const char *event, uint64_t a, uint64_t b, uint64_t c)
     char line[128];
     unsigned len = 0;
 
-    append_text(line, &len, "CACTUS/SHIM ", 12);
+    append_text(line, &len, "OPPO6765/SHIM ", 14);
     append_text(line, &len, event, 31);
     append_text(line, &len, " a=", 3);
     append_hex(line, &len, a);

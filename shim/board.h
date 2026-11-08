@@ -8,7 +8,7 @@
  * generic loader/debug code stays identical.
  */
 
-#if defined(BOARD_CACTUS)
+#if defined(BOARD_OPPO6765)
 
 #define BOARD_NAME		"cactus"
 

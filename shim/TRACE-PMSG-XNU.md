@@ -40,6 +40,13 @@ adb -s <REDACTED_DEVICE_SERIAL> pull /sys/fs/pstore/pmsg-ramoops-0 "F:\ROM\patch
 python -c "import pathlib,re; p=pathlib.Path(r'F:\ROM\patching\redmi 6a xnu\cactus-pmsg-xnu.bin'); data=p.read_bytes(); [print(m.group().decode('ascii','replace')) for m in re.finditer(rb'CACTUS/SHIM[^\r\n]{0,128}',data)]"
 ```
 
+Current `BOARD=oppo6765` builds label records `OPPO6765/SHIM`; the older
+Cactus captures retain `CACTUS/SHIM`. To read either format, use:
+
+```sh
+python -c 'import pathlib,re,sys; b=pathlib.Path(sys.argv[1]).read_bytes(); [print(m.group().decode("ascii","replace")) for m in re.finditer(rb"(?:CACTUS|OPPO6765)/SHIM[^\r\n]{0,128}",b)]' capture.bin
+```
+
 Native pmsg is RAM-backed. Stage 6 proved shim-to-TWRP transport, but the
 marker **may disappear** across the forced reset needed to escape a hung
 XNU image, a true power-off, bootloader RAM clearing, or a recovery boot

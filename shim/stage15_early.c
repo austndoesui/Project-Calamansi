@@ -26,7 +26,7 @@
 #include "fdt_ranges.h"
 #endif
 
-#if !defined(BOARD_CACTUS) || !defined(SHIM_STAGE15_EARLY) || SHIM_STAGE15_EARLY < 1
+#if !defined(BOARD_OPPO6765) || !defined(SHIM_STAGE15_EARLY) || SHIM_STAGE15_EARLY < 1
 #error Stage 15 Early is cactus-only and requires STAGE15_EARLY=1..4
 #endif
 

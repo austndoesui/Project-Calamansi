@@ -32,8 +32,8 @@ STAGE15_DIAG="${STAGE15_DIAG:-0}"
 STAGE15_EARLY="${STAGE15_EARLY:-0}"
 PAYLOAD="${1:-}"
 
-if [ "$STAGE15" = 1 ] && [ "$BOARD" != cactus ]; then
-    echo "Stage 15 is cactus-only" >&2; exit 1
+if [ "$STAGE15" = 1 ] && [ "$BOARD" != oppo6765 ]; then
+    echo "Stage 15 is oppo6765-only" >&2; exit 1
 fi
 if [ "$STAGE15_DIAG" = 1 ] && [ "$STAGE15" != 1 ]; then
     echo "STAGE15_DIAG requires STAGE15=1" >&2; exit 1
@@ -42,11 +42,11 @@ case "$STAGE15_EARLY" in
     0|1|2|3|4) ;;
     *) echo "STAGE15_EARLY must be 0..4" >&2; exit 1 ;;
 esac
-if [ "$STAGE15_EARLY" != 0 ] && { [ "$BOARD" != cactus ] || [ "$STAGE15" != 1 ]; }; then
-    echo "STAGE15_EARLY requires BOARD=cactus STAGE15=1" >&2; exit 1
+if [ "$STAGE15_EARLY" != 0 ] && { [ "$BOARD" != oppo6765 ] || [ "$STAGE15" != 1 ]; }; then
+    echo "STAGE15_EARLY requires BOARD=oppo6765 STAGE15=1" >&2; exit 1
 fi
 
-if [ "$BOARD" = cactus ] && [ "$TRACE_PMSG" = 1 ] && [ "$EARLY_PSTORE" != 0 ]; then
+if [ "$BOARD" = oppo6765 ] && [ "$TRACE_PMSG" = 1 ] && [ "$EARLY_PSTORE" != 0 ]; then
 	echo "error: EARLY_PSTORE writes the recovery ramoops console region; use EARLY_PSTORE=0 with TRACE_PMSG=1" >&2
 	exit 1
 fi
@@ -55,11 +55,11 @@ OBJCOPY="${OBJCOPY:-aarch64-linux-gnu-objcopy}"
 READELF="${READELF:-aarch64-linux-gnu-readelf}"
 NM="${NM:-aarch64-linux-gnu-nm}"
 
-if [ "$BOARD" = cactus ]; then
-	CFLAGS="-O2 -ffreestanding -nostdlib -fno-pic -mgeneral-regs-only -mstrict-align -fno-stack-protector -fno-omit-frame-pointer -Wall -Wextra -DBOARD_CACTUS -DCACTUS_DEBUG=1"
-	DTB="${DTB:-/home/lapdq/cactus-kernel/pack/cactus_dtb.orig.raw}"
-	DTBO="${DTBO:-/home/lapdq/cactus-kernel/images/cactus_dtbo.img}"
-	MBOOTIMG="${MBOOTIMG:-python3 /home/lapdq/cactus-kernel/pack/mkbootimg.py}"
+if [ "$BOARD" = oppo6765 ]; then
+	CFLAGS="-O2 -ffreestanding -nostdlib -fno-pic -mgeneral-regs-only -mstrict-align -fno-stack-protector -fno-omit-frame-pointer -Wall -Wextra -DBOARD_OPPO6765 -DCACTUS_DEBUG=1"
+	DTB="${DTB:-../../device/live-fdt.dtb}"
+	DTBO="${DTBO:-../../device/dtbo.img}"
+	MBOOTIMG="${MBOOTIMG:-mkbootimg}"
 	BASE=0x40078000
 	KERNEL_OFFSET=0x00008000
 	RAMDISK_OFFSET=0x11A88000
@@ -117,7 +117,7 @@ fi
 
 OBJS=()
 SOURCES=(start.S shim.c console.c debug.c pmsg_trace.c watchdog.c bootmode.c mmu.c fdt.c loader.c)
-if [ "$BOARD" = cactus ]; then
+if [ "$BOARD" = oppo6765 ]; then
     # Runtime memory admission is mandatory even when STAGE15=0.
     SOURCES+=(fdt_ranges.c payload_layout.c)
 fi
@@ -199,7 +199,7 @@ fi
 
 # Host render of the console layout (sanity check only).
 HOSTDEF=""
-[ "$BOARD" = cactus ] && HOSTDEF="-DBOARD_CACTUS"
+[ "$BOARD" = oppo6765 ] && HOSTDEF="-DBOARD_OPPO6765"
 gcc -O1 -Wall $HOSTDEF -o "$OUTDIR/host_test" console.c host_test.c
 (cd "$OUTDIR" && ./host_test >/dev/null)
 
@@ -207,6 +207,6 @@ ls -l "$OUTDIR/Image" "$OUTDIR/Image.gz-dtb" "$OUTDIR/ramdisk.bin" "$OUT"
 if command -v sha256sum >/dev/null; then
 	sha256sum "$OUT"
 fi
-if [ "$BOARD" = cactus ]; then
+if [ "$BOARD" = oppo6765 ]; then
 	python3 ./check_image.py "$OUT"
 fi
