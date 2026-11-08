@@ -128,6 +128,28 @@ jobs:
           xcodebuild -version
           xcrun --find iig
 
+      - name: Install verified KDK for XNU 13.5
+        if: env.MACOS_VERSION == '13.5'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          kdk=/Library/Developer/KDKs/KDK_13.5_22G74.kdk
+          if [ -d "$kdk" ]; then
+            echo 'KDK already available'
+            exit 0
+          fi
+          mkdir -p "$RUNNER_TEMP/cactus-kdk"
+          cd "$RUNNER_TEMP/cactus-kdk"
+          expected=29866842eef039812888daea4176ce493be153b0d6d1b88f90753d69ea51b7d4
+          gh release download 22G74 --repo dortania/KdkSupportPkg \
+            --pattern 'Kernel_Debug_Kit_13.5_build_22G74.dmg' --clobber
+          echo "$expected  Kernel_Debug_Kit_13.5_build_22G74.dmg" | shasum -a 256 -c -
+          hdiutil attach -nobrowse 'Kernel_Debug_Kit_13.5_build_22G74.dmg'
+          sudo installer -pkg '/Volumes/Kernel Debug Kit/KernelDebugKit.pkg' -target /
+          hdiutil detach '/Volumes/Kernel Debug Kit'
+          test -d "$kdk"
+
       - name: Build
         working-directory: dxb
         env:
@@ -236,6 +258,7 @@ jobs:
         run: |
           mkdir -p out/kdk-libs
           for lib in /Library/Developer/KDKs/*/System/Library/KernelSupport/lib*.a; do
+            [ -f "$lib" ] || continue
             b=$(basename "$lib" .a)
             ar t "$lib" > "out/kdk-libs/$b.members.txt" 2>&1 || true
             nm -m "$lib" > "out/kdk-libs/$b.nm.txt" 2>&1 || true
