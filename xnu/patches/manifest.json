@@ -861,7 +861,14 @@
       "scope": "devices/cactus",
       "source": "xnu/patches/devices/cactus/0121-cactus-msdc-readonly-root.patch",
       "upstream_name": "0121-cactus-msdc-readonly-root.patch",
-      "sha256": "a49965417653f4d97f1eb3b2ef88d33514d3de64d8ba7094928f5473d4da46ca"
+      "sha256": "ec1784328c15e38406f2d0939146a576b5e77cbecbed04d39a318de6af2e9bff"
+    },
+    {
+      "order": 122,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0122-cactus-writable-hfs-root.patch",
+      "upstream_name": "0122-cactus-writable-hfs-root.patch",
+      "sha256": "a729288b86e1d0135ad0a98e67a69f59acbf1f6c035fd066ccb1a019ee3c91c7"
     }
   ]
 }

@@ -2,12 +2,15 @@ diff --git a/bsd/dev/cactus_msdc.c b/bsd/dev/cactus_msdc.c
 new file mode 100644
 --- /dev/null
 +++ b/bsd/dev/cactus_msdc.c
-@@ -0,0 +1,435 @@
-+/* Cactus MT6765 internal eMMC: read-only XNU BSD block device.
+@@ -0,0 +1,528 @@
++/* Cactus MT6765 internal eMMC: XNU BSD block device.
 + * The 0x11230000 controller and polled CMD13/CMD17 operations were verified
 + * on Redmi 6A in Stage88. Inherit LK's clock, voltage, tuning and RCA=1.
-+ * There is deliberately no eMMC write command or controller reset here.
++ * The driver reuses LK's eMMC setup without a controller reset.
 + * rd=emmcroot0 selects a CRC-verified GPT partition named "iosroot".
++ * cactusroot=userdata selects the existing Android userdata partition for
++ * an explicitly provisioned iOS root; cactusrw=1 enables partition-bound
++ * writes. The default remains read-only.
 + * With rd=md0, cactus_emmc_probe=1 enables a non-fatal native probe.
 + */
 +#if defined(ARM64_BOARD_CONFIG_CACTUS)
@@ -34,6 +37,7 @@ new file mode 100644
 +#define CMMC_INTEN 0x10u
 +#define CMMC_FIFO 0x14u
 +#define CMMC_RX 0x1cu
++#define CMMC_TX 0x18u
 +#define CMMC_CMD 0x34u
 +#define CMMC_ARG 0x38u
 +#define CMMC_STS 0x3cu
@@ -52,6 +56,8 @@ new file mode 100644
 +static vm_offset_t cactus_mmio;
 +static uint32_t cactus_capacity;
 +static uint32_t cactus_root_first, cactus_root_count;
++static int cactus_writable;
++static char cactus_root_name[16] = "iosroot";
 +static dev_t cactus_rootdev;
 +static int cactus_initialized, cactus_init_error, cactus_bmajor, cactus_cmajor;
 +static uint8_t cactus_gpt[CMMC_GPT_BYTES];
@@ -99,8 +105,9 @@ new file mode 100644
 +    cactus_wr(CMMC_CMD, opcode |
 +        ((opcode == 12 ? 7u : 1u) << 7) |
 +        (opcode == 12 ? (1u << 14) : 0u) |
-+        (has_data ? ((has_data >= 3 ? 2u : 1u) << 11) |
-+        (CMMC_SECTOR << 16) : 0u));
++        ((has_data & 3) ? (((has_data & 3) == 3 ? 2u : 1u) << 11) |
++        (CMMC_SECTOR << 16) : 0u) |
++        ((has_data & 4) ? (1u << 13) : 0u));
 +    const uint64_t until = cactus_timeout();
 +    do {
 +        uint32_t state = cactus_reg(CMMC_INT) & (CMMC_CMD_DONE | CMMC_CMD_ERR);
@@ -189,6 +196,77 @@ new file mode 100644
 +    return cactus_read_blocks(lba, dst, 1u);
 +}
 +
++/* PIO writes: CMD24 or CMD23 + CMD25. Never write outside the selected root
++ * partition. Callers must own the buffer for the duration of the transfer. */
++static int
++cactus_write_blocks_locked(uint32_t lba, const uint8_t *src, unsigned blocks)
++{
++    uint32_t response = 0;
++    if (!cactus_writable || !cactus_root_count || !blocks ||
++        blocks > CMMC_MAXBLOCKS || lba < cactus_root_first ||
++        (uint64_t)lba + blocks - cactus_root_first > cactus_root_count)
++        return EPERM;
++    if (blocks > 1u) {
++        int error = cactus_command(23u, blocks, 0, &response);
++        if (error) return error;
++    }
++    cactus_wr(CMMC_BLOCKS, blocks);
++    cactus_wr(CMMC_FIFO, cactus_reg(CMMC_FIFO) | (1u << 31));
++    const uint64_t cleared = cactus_timeout();
++    while (cactus_reg(CMMC_FIFO) & (1u << 31)) {
++        if (mach_absolute_time() >= cleared) return ETIMEDOUT;
++    }
++    int error = cactus_command(blocks == 1u ? 24u : 25u, lba,
++                               blocks == 1u ? 5 : 7, &response);
++    if (error) return error;
++    unsigned sent = 0, total = blocks * CMMC_SECTOR;
++    int complete = 0;
++    const uint64_t until = cactus_timeout();
++    do {
++        uint32_t irq = cactus_reg(CMMC_INT) & (CMMC_DATA_DONE | CMMC_DATA_ERR);
++        if (irq) {
++            cactus_wr(CMMC_INT, irq);
++            if (irq & CMMC_DATA_ERR) { error = EIO; goto recover; }
++            if (irq & CMMC_DATA_DONE) complete = 1;
++        }
++        /* MTK FIFO is 128 bytes; fill only when TX count is zero. */
++        if (!complete && sent < total &&
++            ((cactus_reg(CMMC_FIFO) >> 16) & 255u) == 0u) {
++            unsigned bytes = MIN(total - sent, 128u);
++            for (unsigned off = 0; off < bytes; off += 4u) {
++                uint32_t word = src[sent + off] |
++                    ((uint32_t)src[sent + off + 1] << 8) |
++                    ((uint32_t)src[sent + off + 2] << 16) |
++                    ((uint32_t)src[sent + off + 3] << 24);
++                cactus_wr(CMMC_TX, word);
++            }
++            sent += bytes;
++        }
++        if (complete && sent == total) return 0;
++    } while (mach_absolute_time() < until);
++    error = ETIMEDOUT;
++recover:
++    if (blocks > 1u) (void)cactus_command(12u, 0, 0, &response);
++    return error;
++}
++
++static int
++cactus_write_blocks(uint32_t lba, const uint8_t *src, unsigned blocks)
++{
++    int error;
++    lck_mtx_lock(&cactus_msdc_lock);
++    uint32_t cfg = cactus_reg(CMMC_CFG);
++    uint32_t inten = cactus_reg(CMMC_INTEN);
++    cactus_wr(CMMC_INTEN, 0u);
++    cactus_wr(CMMC_CFG, cfg | (1u << 3));
++    error = cactus_write_blocks_locked(lba, src, blocks);
++    cactus_wr(CMMC_INT, cactus_reg(CMMC_INT));
++    cactus_wr(CMMC_CFG, cfg);
++    cactus_wr(CMMC_INTEN, inten);
++    lck_mtx_unlock(&cactus_msdc_lock);
++    return error;
++}
++
 +static uint32_t
 +cactus_le32(const uint8_t *p)
 +{
@@ -218,7 +296,7 @@ new file mode 100644
 +static int
 +cactus_find_root(const uint8_t header[CMMC_SECTOR], uint32_t capacity)
 +{
-+    static const char name[] = "iosroot";
++    const char *name = cactus_root_name;
 +    uint64_t entry_lba = cactus_le64(header + 72);
 +    uint32_t n = cactus_le32(header + 80);
 +    uint32_t esize = cactus_le32(header + 84);
@@ -238,11 +316,11 @@ new file mode 100644
 +    for (uint32_t i = 0; i < n; i++) {
 +        const uint8_t *e = cactus_gpt + i * esize;
 +        unsigned j = 0;
-+        for (; j < sizeof(name) - 1; j++) {
++        for (; name[j] && j < sizeof(cactus_root_name) - 1; j++) {
 +            if (e[56 + j * 2] != (uint8_t)name[j] || e[57 + j * 2])
 +                break;
 +        }
-+        if (j != sizeof(name) - 1 || e[56 + j * 2] || e[57 + j * 2])
++        if (name[j] || e[56 + j * 2] || e[57 + j * 2])
 +            continue;
 +        uint64_t first = cactus_le64(e + 32), last = cactus_le64(e + 40);
 +        if (cactus_root_count || first < usable_first ||
@@ -251,8 +329,8 @@ new file mode 100644
 +        cactus_root_first = (uint32_t)first;
 +        cactus_root_count = (uint32_t)(last - first + 1);
 +    }
-+    printf("CACTUS MSDC: GPT CRC verified; iosroot LBA=%u sectors=%u\n",
-+           cactus_root_first, cactus_root_count);
++    printf("CACTUS MSDC: GPT verified; %s LBA=%u sectors=%u\n",
++           cactus_root_name, cactus_root_first, cactus_root_count);
 +    return 0;
 +}
 +
@@ -261,7 +339,7 @@ new file mode 100644
 +{
 +    if (!cactus_initialized || minor(dev) > 1 ||
 +        (minor(dev) == 1 && !cactus_root_count)) return ENXIO;
-+    return (flags & FWRITE) ? EROFS : 0;
++    return ((flags & FWRITE) && (!cactus_writable || minor(dev) != 1)) ? EROFS : 0;
 +}
 +
 +static int
@@ -282,7 +360,10 @@ new file mode 100644
 +    int error = 0;
 +    uint32_t done = 0;
 +    buf_setresid(bp, count);
-+    if (!(buf_flags(bp) & B_READ)) { error = EROFS; goto out; }
++    int reading = (buf_flags(bp) & B_READ) != 0;
++    if (!reading && (!cactus_writable || minor(buf_device(bp)) != 1)) {
++        error = EROFS; goto out;
++    }
 +    if (minor(buf_device(bp)) > 1 || (minor(buf_device(bp)) && !cactus_root_count) ||
 +        (count & 511u) || block > sectors ||
 +        (uint64_t)(count / 512u) > (uint64_t)sectors - block) {
@@ -292,8 +373,12 @@ new file mode 100644
 +    if (buf_map(bp, &mapped)) { error = EIO; goto out; }
 +    for (; done < count;) {
 +        unsigned blocks = MIN((count - done) / CMMC_SECTOR, CMMC_MAXBLOCKS);
-+        error = cactus_read_blocks(start + (uint32_t)block + done / 512u,
-+                                   (uint8_t *)mapped + done, blocks);
++        uint32_t lba = start + (uint32_t)block + done / 512u;
++        if (reading) {
++            error = cactus_read_blocks(lba, (uint8_t *)mapped + done, blocks);
++        } else {
++            error = cactus_write_blocks(lba, (uint8_t *)mapped + done, blocks);
++        }
 +        if (error) break;
 +        done += blocks * CMMC_SECTOR;
 +        buf_setresid(bp, count - done);
@@ -313,9 +398,9 @@ new file mode 100644
 +    case DKIOCGETBLOCKSIZE:
 +    case DKIOCGETPHYSICALBLOCKSIZE: *(uint32_t *)data = CMMC_SECTOR; return 0;
 +    case DKIOCGETBLOCKCOUNT: *(uint64_t *)data = sectors; return 0;
-+    case DKIOCISWRITABLE: *(uint32_t *)data = 0; return 0;
++    case DKIOCISWRITABLE: *(uint32_t *)data = (cactus_writable && minor(dev) == 1); return 0;
 +    case DKIOCGETMAXBLOCKCOUNTREAD: *(uint64_t *)data = CMMC_MAXBLOCKS; return 0;
-+    case DKIOCGETMAXBLOCKCOUNTWRITE: *(uint64_t *)data = 0; return 0;
++    case DKIOCGETMAXBLOCKCOUNTWRITE: *(uint64_t *)data = cactus_writable && minor(dev) == 1 ? CMMC_MAXBLOCKS : 0; return 0;
 +    case DKIOCGETMAXSEGMENTCOUNTREAD:
 +    case DKIOCGETMAXSEGMENTCOUNTWRITE: *(uint64_t *)data = 1; return 0;
 +    case DKIOCSYNCHRONIZE:
@@ -339,10 +424,10 @@ new file mode 100644
 +}
 +
 +static int
-+cactus_write(__unused dev_t dev, __unused struct uio *uio,
-+             __unused int flags)
++cactus_write(dev_t dev, struct uio *uio, __unused int flags)
 +{
-+    return EROFS;
++    if (!cactus_writable || minor(dev) != 1) return EROFS;
++    return physio(cactus_strategy, NULL, dev, B_WRITE, minphys, uio, CMMC_SECTOR);
 +}
 +
 +static const struct bdevsw cactus_bdevsw = {
@@ -366,6 +451,14 @@ new file mode 100644
 +    uint8_t sector[512];
 +    uint32_t response = 0;
 +    int error;
++    uint32_t rw = 0;
++    (void)PE_parse_boot_argn("cactusroot", cactus_root_name,
++                            sizeof(cactus_root_name));
++    cactus_root_name[sizeof(cactus_root_name) - 1] = '\0';
++    if (strcmp(cactus_root_name, "iosroot") &&
++        strcmp(cactus_root_name, "userdata")) return EINVAL;
++    (void)PE_parse_boot_argn("cactusrw", &rw, sizeof(rw));
++    cactus_writable = rw && !strcmp(cactus_root_name, "userdata");
 +    cactus_mmio = ml_io_map(CMMC_PA, 0x1000);
 +    if (!cactus_mmio || !(cactus_reg(CMMC_CFG) & (1u << 7)))
 +        return ENXIO;
@@ -408,12 +501,12 @@ new file mode 100644
 +    if (cactus_root_count) {
 +        cactus_rootdev = makedev(cactus_bmajor, 1);
 +        devfs_make_node(cactus_rootdev, DEVFS_BLOCK,
-+                        UID_ROOT, GID_OPERATOR, 0440, "emmcroot0");
++                        UID_ROOT, GID_OPERATOR, cactus_writable ? 0640 : 0440, "emmcroot0");
 +        devfs_make_node(makedev(cactus_cmajor, 1), DEVFS_CHAR,
 +                        UID_ROOT, GID_OPERATOR, 0440, "remmcroot0");
 +    }
-+    printf("CACTUS MSDC: read-only eMMC ready, sectors=%u root=%u\n",
-+           cactus_capacity, cactus_root_count);
++    printf("CACTUS MSDC: eMMC ready, sectors=%u root=%u %s\n",
++           cactus_capacity, cactus_root_count, cactus_writable ? "writable" : "read-only");
 +    return 0;
 +}
 +
@@ -477,7 +570,10 @@ diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
 diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
 --- a/bsd/kern/bsd_init.c
 +++ b/bsd/kern/bsd_init.c
-@@ -720,2 +720,14 @@
+@@ -691,5 +691,17 @@
+ 	bsd_init_kprintf("calling vfsinit\n");
+ 	vfsinit();
+ 
 +#if defined(ARM64_BOARD_CONFIG_CACTUS)
 +	/* Probe native eMMC while keeping the existing md0 root mounted.
 +	 * This is a bounded, non-fatal read-only GPT/EXT_CSD probe. */

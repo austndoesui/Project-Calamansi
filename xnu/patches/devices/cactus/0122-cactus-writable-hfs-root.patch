@@ -1,0 +1,33 @@
+diff --git a/bsd/vfs/vfs_subr.c b/bsd/vfs/vfs_subr.c
+--- a/bsd/vfs/vfs_subr.c
++++ b/bsd/vfs/vfs_subr.c
+@@ -1259,7 +1259,7 @@
+ 
+ 		mp = vfs_rootmountalloc_internal(vfsp, "root_device");
+ 		mp->mnt_devvp = rootvp;
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_CACTUS)
+ 		/*
+ 		 * SWEET has no data volume: /private/var lives on the root, so
+ 		 * boot-arg rootrw=1 mounts it read-write from the start.
+diff --git a/bsd/sweet_hfs/core/hfs_vfsutils.c b/bsd/sweet_hfs/core/hfs_vfsutils.c
+--- a/bsd/sweet_hfs/core/hfs_vfsutils.c
++++ b/bsd/sweet_hfs/core/hfs_vfsutils.c
+@@ -204,7 +204,7 @@
+ 	/* don't mount a writable volume if its dirty, it must be cleaned by fsck_hfs */
+ 	if ((hfsmp->hfs_flags & HFS_READ_ONLY) == 0 && hfsmp->jnl == NULL &&
+ 	    (SWAP_BE32(vhp->attributes) & kHFSVolumeUnmountedMask) == 0) {
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_CACTUS)
+ 		/*
+ 		 * SWEET never unmounts its root (no clean shutdown yet), and
+ 		 * there is no fsck_hfs before the root mount: take it anyway.
+@@ -219,7 +219,7 @@
+ 			printf("hfs_mounthfsplus: cannot mount dirty non-journaled volumes\n");
+ 		}
+ 		return (EINVAL);
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_CACTUS)
+ 		}
+ #endif
+ 	}
