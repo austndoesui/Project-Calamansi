@@ -855,6 +855,13 @@
       "source": "xnu/patches/devices/cactus/0120-cactus-pid1-stack-fault-handoff-stage85.patch",
       "upstream_name": "0120-cactus-pid1-stack-fault-handoff-stage85.patch",
       "sha256": "5014d3e8e87c79e488a30db82e2f1fdb1ccd9e1395be0f87bb23e34a84bfb01b"
+    },
+    {
+      "order": 121,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0121-cactus-msdc-readonly-root.patch",
+      "upstream_name": "0121-cactus-msdc-readonly-root.patch",
+      "sha256": "9e21ec4f9e6676cba2074aecdf80f60fa1105d6ff81f8d8892eaababe3eb87b8"
     }
   ]
 }

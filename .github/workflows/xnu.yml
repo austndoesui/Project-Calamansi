@@ -165,6 +165,7 @@ jobs:
               '0118-cactus-pid1-postparse-pagein-stage83.patch',
               '0119-cactus-pid1-exec-handoff-stage84.patch',
               '0120-cactus-pid1-stack-fault-handoff-stage85.patch',
+              '0121-cactus-msdc-readonly-root.patch',
           )
           failures = []
           for name in required:
