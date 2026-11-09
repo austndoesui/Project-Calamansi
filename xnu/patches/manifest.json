@@ -876,6 +876,13 @@
       "source": "xnu/patches/devices/cactus/0123-cactus-root-block-open-errors.patch",
       "upstream_name": "0123-cactus-root-block-open-errors.patch",
       "sha256": "cfc231f53d70262c11feb80b6991b2ad79f4175d84d1818c29346bc0afac5d73"
+    },
+    {
+      "order": 124,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0124-cactus-ios16-gui-bringup.patch",
+      "upstream_name": "0124-cactus-ios16-gui-bringup.patch",
+      "sha256": "a7bc11cee33d58f52f8fc81a273f292b583a8ecf179c9a7f7418364b0bb50979"
     }
   ]
 }
