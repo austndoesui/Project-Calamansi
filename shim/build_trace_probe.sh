@@ -214,6 +214,7 @@ if [[ "$STAGE" -ge 18 ]]; then
                 KERNEL_ARTIFACT_DIR="../_build/_xnu-ci-worktree/_artifacts/run8"
             fi
             python3 check_stage96_xnu.py \
+                --stage "$REQUESTED_STAGE" \
                 --kernel "$KERNEL_ARTIFACT_DIR/kernel.development.cactus" \
                 --sums "$KERNEL_ARTIFACT_DIR/SHA256SUMS" \
                 --payload "$PREPARED_PAYLOAD" \
