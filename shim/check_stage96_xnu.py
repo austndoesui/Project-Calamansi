@@ -29,7 +29,7 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
     if len(listed) != 1 or listed[0] != kernel_sha:
         raise ValueError("Stage96 kernel does not match CI SHA256SUMS")
 
-    if stage in (98, 99):
+    if stage in (98, 99, 100):
         required = (
             b"CACTUS IOS16: shared-cache CS enforcement disabled by boot argument",
             b"CACTUS IOS16: launchd dyld cache map begin",
@@ -38,7 +38,7 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
         for marker in required:
             if marker not in kernel:
                 raise ValueError(f"Stage{stage} compiled kernel missing {marker!r}")
-    if stage == 99:
+    if stage in (99, 100):
         required = (
             b"ST99 timer PPI enabled",
             b"ST99 timer IRQ and wait OK",
@@ -49,6 +49,10 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
         for marker in required:
             if marker not in kernel:
                 raise ValueError(f"Stage99 compiled kernel missing {marker!r}")
+    if stage == 100:
+        for marker in (b"ST100 late PPI restored", b"ST100 late PPI enabled"):
+            if marker not in kernel:
+                raise ValueError(f"Stage100 compiled kernel missing {marker!r}")
 
     p = Payload(payload_file.read_bytes(), expected_segments=11)
     macho = mkpayload.parse_macho(kernel)
@@ -67,7 +71,7 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
 
     # Apply all 41 existing native ADT/FB/GIC/eMMC/early instruction guards.
     base.CHANGED = words
-    if stage in (98, 99):
+    if stage in (98, 99, 100):
         # Full literal bootargs validation still applies, including this new
         # explicit opt-in. Stage96's original pinned arguments stay unchanged.
         base.CMD = base.CMD + b" cs_enforcement_disable=1 cs_debug=1"
@@ -109,6 +113,6 @@ if __name__ == "__main__":
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--shim", type=Path, default=Path(__file__).with_name("stage19_probe.c"))
     parser.add_argument("--header", type=Path, default=Path(__file__).parent / "out/cactus/stage96-pins.h")
-    parser.add_argument("--stage", type=int, choices=(96, 98, 99), default=96)
+    parser.add_argument("--stage", type=int, choices=(96, 98, 99, 100), default=96)
     args = parser.parse_args()
     verify(args.kernel, args.sums, args.payload, args.root, args.shim, args.header, args.stage)

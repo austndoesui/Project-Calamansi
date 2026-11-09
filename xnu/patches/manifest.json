@@ -911,6 +911,13 @@
       "source": "xnu/patches/devices/cactus/0128-cactus-ios16-launchd-timer-service-progress.patch",
       "upstream_name": "0128-cactus-ios16-launchd-timer-service-progress.patch",
       "sha256": "c6ac66739c40db14d74eb4988ea3390a4c517b3674855c36a35b5ac05d1f16e9"
+    },
+    {
+      "order": 129,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0129-cactus-ios16-late-virtual-timer-recovery.patch",
+      "upstream_name": "0129-cactus-ios16-late-virtual-timer-recovery.patch",
+      "sha256": "f057acc510a732d9497d1ff59045459d973e66820584d910f9a362a3e75bbe1c"
     }
   ]
 }

@@ -1,0 +1,62 @@
+diff --git a/osfmk/arm64/machine_routines.c b/osfmk/arm64/machine_routines.c
+--- a/osfmk/arm64/machine_routines.c
++++ b/osfmk/arm64/machine_routines.c
+@@ -2052,6 +2052,19 @@
+ 		cdp->cpu_set_decrementer_func(dec_value);
+ 	} else {
+ 		__builtin_arm_wsr64("CNTV_TVAL_EL0", (uint64_t)dec_value);
++#if defined(CACTUS)
++		/* A late mask/disable loses every BSD timeout, including launchd's
++		 * service startup and the SWEET process sampler. The timer is
++		 * normally enabled once in fiq_context_init(); restore it only
++		 * if firmware or an exceptional path changed CNTV_CTL_EL0.
++		 * This routine is called with local interrupts disabled. */
++		uint64_t ctl = __builtin_arm_rsr64("CNTV_CTL_EL0");
++		if ((ctl & (CNTV_CTL_EL0_ENABLE | CNTV_CTL_EL0_IMASKED)) !=
++		    CNTV_CTL_EL0_ENABLE) {
++			__builtin_arm_wsr64("CNTV_CTL_EL0", CNTV_CTL_EL0_ENABLE);
++			__builtin_arm_isb(ISB_SY);
++		}
++#endif
+ 	}
+ }
+ 
+diff --git a/pexpert/arm/pe_identify_machine.c b/pexpert/arm/pe_identify_machine.c
+--- a/pexpert/arm/pe_identify_machine.c
++++ b/pexpert/arm/pe_identify_machine.c
+@@ -160,6 +160,17 @@
+ 			gPEClockFrequencyInfo.cpu_clock_rate_hz = 0xFFFFFFFF;
+ 		}
+ 	}
++
++#if defined(CACTUS)
++	/* Keep deadline/timebase conversion tied to the counter actually
++	 * running on the MT6765. The cactus ADT currently advertises 13 MHz;
++	 * using CNTFRQ also survives an LK timer configuration change. */
++	uint64_t actual_timebase = __builtin_arm_rsr64("CNTFRQ_EL0");
++	if (actual_timebase >= 1000000 && actual_timebase <= 1000000000) {
++		gPEClockFrequencyInfo.timebase_frequency_hz = actual_timebase;
++		gPEClockFrequencyInfo.dec_clock_rate_hz = actual_timebase;
++	}
++#endif
+ 
+ 	/* Set the num / den pairs form the hz values. */
+ 	gPEClockFrequencyInfo.bus_clock_rate_num = gPEClockFrequencyInfo.bus_clock_rate_hz;
+diff --git a/bsd/kern/sweet_amfi.c b/bsd/kern/sweet_amfi.c
+--- a/bsd/kern/sweet_amfi.c
++++ b/bsd/kern/sweet_amfi.c
+@@ -296,6 +296,14 @@
+ 		cactus_launchd_sandbox_seen = true;
+ 		extern void fbcon_stage53_progress(const char *);
+ 		fbcon_stage53_progress("ST99 Apple launchd sandbox op2");
++		/* Unlike the process sampler, this executes on the proven
++		 * launchd syscall path even if timed waits have stalled.
++		 * Recheck GICR PPI27 and repair an unexpectedly disabled route. */
++		extern int cactus_vtimer_repair_if_needed(void);
++		int repair = cactus_vtimer_repair_if_needed();
++		fbcon_stage53_progress(repair == 1 ? "ST100 late PPI restored" :
++		    repair == 0 ? "ST100 late PPI enabled" :
++		    "ST100 late PPI repair failed");
+ 	}
+ #endif
+ 	if (call >= 0 && call < 64 && !(sweet_sandbox_seen & (1ULL << call))) {
