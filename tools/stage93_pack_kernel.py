@@ -23,7 +23,7 @@ def sha256_file(path: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stage", type=int, choices=(93, 94, 96), default=93,
+    parser.add_argument("--stage", type=int, choices=(93, 94, 96, 98), default=93,
                         help="versioned payload output (never overwrite a tested stage)")
     parser.add_argument("--kernel", type=Path, required=True,
                         help="kernel.development.cactus extracted from the Stage93 CI run")
@@ -55,6 +55,10 @@ def main() -> None:
 
     pack.STAGE77_VERIFIED_KERNEL_SHA256 = args.sha256
     pack.STAGE65_VERIFIED_INIT_SHA256 = ROOT_SHA256
+    extra_boot_args = EXTRA_BOOT_ARGS
+    if args.stage == 98:
+        # Opt in only for the experimental cactus iOS 16 shared-cache boot.
+        extra_boot_args += " cs_enforcement_disable=1 cs_debug=1"
     pack.prepare(
         kernel, project / "shim/out/cactus/payload.bin", output,
         stage61_live_fb=True, stage64_cactus_gic=True,
@@ -65,7 +69,7 @@ def main() -> None:
         stage73_pid1_vm=True, stage74_physmap_pid1=True,
         stage75_exec_read=True, stage76_pid1_shadow=True,
         stage77_pid1_wired=True, ramdisk=root,
-        root_device="emmcroot0", extra_boot_args=EXTRA_BOOT_ARGS,
+        root_device="emmcroot0", extra_boot_args=extra_boot_args,
     )
     print(f"STAGE{args.stage}_CI={args.ci_run} KERNEL_SHA256={args.sha256}")
     print(f"STAGE{args.stage}_PAYLOAD={output} SHA256={sha256_file(output)}")

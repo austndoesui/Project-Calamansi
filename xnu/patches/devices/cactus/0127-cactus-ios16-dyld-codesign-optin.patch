@@ -1,0 +1,52 @@
+diff --git a/bsd/kern/kern_cs.c b/bsd/kern/kern_cs.c
+--- a/bsd/kern/kern_cs.c
++++ b/bsd/kern/kern_cs.c
+@@ -166,9 +166,20 @@
+ 	int disable_cs_enforcement = 0;
+ 	PE_parse_boot_argn("cs_enforcement_disable", &disable_cs_enforcement,
+ 	    sizeof(disable_cs_enforcement));
+-	if (disable_cs_enforcement && PE_i_can_has_debugger(NULL) != 0) {
++#if defined(CACTUS)
++	/* Cactus boots through the shim, without an Apple debug-enabled ADT.
++	 * Permit the explicit development boot argument on this board only.
++	 * Required for the experimental unsigned iOS 16 dyld cache. */
++	const int allow_cs_disable = 1;
++#else
++	const int allow_cs_disable = PE_i_can_has_debugger(NULL) != 0;
++#endif
++	if (disable_cs_enforcement && allow_cs_disable) {
+ 		cs_system_enforcement_enable = 0;
+ 		cs_process_enforcement_enable = 0;
++#if defined(CACTUS)
++		printf("CACTUS IOS16: shared-cache CS enforcement disabled by boot argument\n");
++#endif
+ 	} else {
+ 		int panic = 0;
+ 		PE_parse_boot_argn("cs_enforcement_panic", &panic, sizeof(panic));
+diff --git a/bsd/vm/vm_unix.c b/bsd/vm/vm_unix.c
+--- a/bsd/vm/vm_unix.c
++++ b/bsd/vm/vm_unix.c
+@@ -2894,6 +2894,12 @@
+ 	files_count = uap->files_count;
+ 	mappings_count = uap->mappings_count;
+ 
++#if defined(CACTUS)
++	if (proc_getpid(p) == 1) {
++		printf("CACTUS IOS16: launchd dyld cache map begin files=%u mappings=%u\n",
++		    files_count, mappings_count);
++	}
++#endif
+ 	if (files_count == 0) {
+ 		SHARED_REGION_TRACE_INFO(
+ 			("shared_region: %p [%d(%s)] map(): "
+@@ -2993,5 +2999,10 @@
+ 	kr = _shared_region_map_and_slide(p, files_count, shared_files, mappings_count, mappings);
+ done:
++#if defined(CACTUS)
++	if (proc_getpid(p) == 1) {
++		printf("CACTUS IOS16: launchd dyld cache map result=%d\n", kr);
++	}
++#endif
+ 	kfree_data(shared_files, files_count * sizeof(shared_files[0]));
+ 	kfree_data(mappings, mappings_count * sizeof(mappings[0]));
+ 	return kr;
