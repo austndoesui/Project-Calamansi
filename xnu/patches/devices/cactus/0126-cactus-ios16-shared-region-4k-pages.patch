@@ -1,0 +1,37 @@
+diff --git a/osfmk/vm/vm_shared_region.c b/osfmk/vm/vm_shared_region.c
+--- a/osfmk/vm/vm_shared_region.c
++++ b/osfmk/vm/vm_shared_region.c
+@@ -781,6 +781,17 @@
+ 				/* enforce 16KB alignment of VM map entries */
+ 				vm_map_set_page_shift(sub_map, SIXTEENK_PAGE_SHIFT);
+ 			}
++#if defined(CACTUS)
++			/*
++			 * Cactus uses a native 4K EL0 map.  The 16K default above
++			 * makes the shared cache submap incompatible with the target
++			 * task and vm_map_enter() returns KERN_INVALID_ARGUMENT (4).
++			 */
++			if (cputype == CPU_TYPE_ARM64 &&
++			    target_page_shift == FOURK_PAGE_SHIFT) {
++				vm_map_set_page_shift(sub_map, FOURK_PAGE_SHIFT);
++			}
++#endif
+ #if __ARM_MIXED_PAGE_SIZE__
+ 			if (cputype == CPU_TYPE_ARM64 &&
+ 			    target_page_shift == FOURK_PAGE_SHIFT) {
+@@ -2287,5 +2298,15 @@
+ 	sr_pmap_nesting_start = (vm_map_offset_t)shared_region->sr_pmap_nesting_start;
+ 	sr_pmap_nesting_size = (vm_map_size_t)shared_region->sr_pmap_nesting_size;
+ 	vmk_flags = VM_MAP_KERNEL_FLAGS_FIXED();
++#if defined(CACTUS)
++	if (cpu == CPU_TYPE_ARM64 && is_64bit) {
++		vm_named_entry_t cactus_mem_entry = mach_memory_entry_from_port(sr_handle);
++		printf("CACTUS IOS16: dyld map page shifts task=%u submap=%u size=0x%llx entry=0x%llx\n",
++		    (unsigned)VM_MAP_PAGE_SHIFT(map),
++		    (unsigned)VM_MAP_PAGE_SHIFT(cactus_mem_entry->backing.map),
++		    (unsigned long long)sr_pmap_nesting_size,
++		    (unsigned long long)cactus_mem_entry->size);
++	}
++#endif
+ 
+ 	cur_prot = VM_PROT_READ;

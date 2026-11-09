@@ -890,6 +890,13 @@
       "source": "xnu/patches/devices/cactus/0125-cactus-ios16-shared-region-mapping.patch",
       "upstream_name": "0125-cactus-ios16-shared-region-mapping.patch",
       "sha256": "47f6701cbea77f41e67b65c65964c5f5467304679269f9615c1f8154a40d20c7"
+    },
+    {
+      "order": 126,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0126-cactus-ios16-shared-region-4k-pages.patch",
+      "upstream_name": "0126-cactus-ios16-shared-region-4k-pages.patch",
+      "sha256": "c80b3298feb14dfa58169e87eb6d6c3be0e919f61790375e2d1af8cad308e4b4"
     }
   ]
 }

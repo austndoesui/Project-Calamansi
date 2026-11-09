@@ -192,6 +192,7 @@ jobs:
               '0123-cactus-root-block-open-errors.patch',
               '0124-cactus-ios16-gui-bringup.patch',
               '0125-cactus-ios16-shared-region-mapping.patch',
+              '0126-cactus-ios16-shared-region-4k-pages.patch',
           )
           failures = []
           for name in required:
@@ -211,6 +212,7 @@ jobs:
               b'CACTUS IOS16: launchd reached main',
               b'SWEET HID: touch registered panel=',
               b'CACTUS IOS16: dyld shared region flat retry',
+              b'CACTUS IOS16: dyld map page shifts task=',
           )
           missing = [marker.decode() for marker in markers if marker not in image]
           if missing:
