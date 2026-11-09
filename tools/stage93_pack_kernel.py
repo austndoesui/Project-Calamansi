@@ -23,7 +23,7 @@ def sha256_file(path: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stage", type=int, choices=(93, 94, 96, 98), default=93,
+    parser.add_argument("--stage", type=int, choices=(93, 94, 96, 98, 99), default=93,
                         help="versioned payload output (never overwrite a tested stage)")
     parser.add_argument("--kernel", type=Path, required=True,
                         help="kernel.development.cactus extracted from the Stage93 CI run")
@@ -56,7 +56,7 @@ def main() -> None:
     pack.STAGE77_VERIFIED_KERNEL_SHA256 = args.sha256
     pack.STAGE65_VERIFIED_INIT_SHA256 = ROOT_SHA256
     extra_boot_args = EXTRA_BOOT_ARGS
-    if args.stage == 98:
+    if args.stage in (98, 99):
         # Opt in only for the experimental cactus iOS 16 shared-cache boot.
         extra_boot_args += " cs_enforcement_disable=1 cs_debug=1"
     pack.prepare(

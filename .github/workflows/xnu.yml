@@ -194,6 +194,7 @@ jobs:
               '0125-cactus-ios16-shared-region-mapping.patch',
               '0126-cactus-ios16-shared-region-4k-pages.patch',
               '0127-cactus-ios16-dyld-codesign-optin.patch',
+              '0128-cactus-ios16-launchd-timer-service-progress.patch',
           )
           failures = []
           for name in required:
@@ -217,6 +218,10 @@ jobs:
               b'CACTUS IOS16: shared-cache CS enforcement disabled by boot argument',
               b'CACTUS IOS16: launchd dyld cache map begin',
               b'CACTUS IOS16: launchd dyld cache map result=',
+              b'ST99 timer PPI enabled',
+              b'ST99 Apple launchd sandbox op2',
+              b'ST99 launchd dyld cache map enter',
+              b'ST99 SpringBoard process exists',
           )
           missing = [marker.decode() for marker in markers if marker not in image]
           if missing:

@@ -1,0 +1,172 @@
+diff --git a/pexpert/arm/pe_fiq.c b/pexpert/arm/pe_fiq.c
+--- a/pexpert/arm/pe_fiq.c
++++ b/pexpert/arm/pe_fiq.c
+@@ -382,6 +382,30 @@
+     __builtin_arm_dsb(DSB_SY);
+     __builtin_arm_isb(ISB_SY);
+ }
++
++/* BSD uses timed waits to start launchd services.  If a late GIC change
++ * disables the architected timer PPI, restore the original CPU0 routing.
++ * Read-only on the normal, already-enabled path. */
++int
++cactus_vtimer_repair_if_needed(void)
++{
++    if (!gicd_base || !gicr_base || ml_get_cpu_number_local() != 0) {
++        return -1;
++    }
++    vm_offset_t gicr_pe_base = find_gicr_pe_base();
++    const uint32_t mask = 1U << sweet_vtimer_intid;
++    if (gicr_read32(GICR_ISENABLER0) & mask) {
++        return 0;
++    }
++    if (gicr_read32(GICR_WAKER) & GICR_WAKER_CHILDRENASLEEP) {
++        return -2;
++    }
++    uint32_t group = gicr_read32(GICR_IGROUPR0);
++    gicr_write32(GICR_IGROUPR0, group | mask);
++    gicr_write32(GICR_ISENABLER0, mask);
++    __builtin_arm_dsb(DSB_SY);
++    return (gicr_read32(GICR_ISENABLER0) & mask) ? 1 : -3;
++}
+ #endif
+ 
+ #else
+diff --git a/osfmk/arm64/sleh.c b/osfmk/arm64/sleh.c
+--- a/osfmk/arm64/sleh.c
++++ b/osfmk/arm64/sleh.c
+@@ -1880,6 +1880,7 @@
+ #if defined(CACTUS)
+ /* IRQ observer; read by the CPU startup thread, never a control bit. */
+ volatile unsigned int cactus_sgi_observed;
++volatile unsigned int cactus_vtimer_irq_count;
+ #endif
+ void
+ sleh_irq(arm_saved_state_t *state)
+@@ -1900,6 +1901,9 @@
+ 		return; /* spurious */
+ 	}
+ 	if (intid == sweet_vtimer_intid) {
++#if defined(CACTUS)
++		__atomic_fetch_add(&cactus_vtimer_irq_count, 1U, __ATOMIC_RELAXED);
++#endif
+ 		sleh_interrupt_handler_prologue(state, DBG_INTR_TYPE_TIMER);
+ 		cdp->cpu_decrementer = -1; /* Large */
+ 		INTERRUPT_MASKED_DEBUG_START(rtclock_intr, DBG_INTR_TYPE_TIMER);
+diff --git a/bsd/dev/sweet_sample.c b/bsd/dev/sweet_sample.c
+--- a/bsd/dev/sweet_sample.c
++++ b/bsd/dev/sweet_sample.c
+@@ -26,5 +26,12 @@
+ 
+ static char sweet_sample_names[128];
++#if defined(CACTUS)
++extern int cactus_vtimer_repair_if_needed(void);
++extern volatile unsigned int cactus_vtimer_irq_count;
++extern void fbcon_stage53_progress(const char *);
++static bool cactus_seen_backboardd;
++static bool cactus_seen_springboard;
++#endif
+ 
+ static bool
+ sweet_sample_wanted(const char *name)
+@@ -53,6 +60,16 @@
+ 	char name[32];
+ 	proc_name(proc_pid(p), name, sizeof(name));
+ 	if (sweet_sample_wanted(name)) {
++#if defined(CACTUS)
++		if (!cactus_seen_backboardd && strcmp(name, "backboardd") == 0) {
++			cactus_seen_backboardd = true;
++			fbcon_stage53_progress("ST99 backboardd process exists");
++		}
++		if (!cactus_seen_springboard && strcmp(name, "SpringBoard") == 0) {
++			cactus_seen_springboard = true;
++			fbcon_stage53_progress("ST99 SpringBoard process exists");
++		}
++#endif
+ 		task_t task = proc_task(p);
+ 		if (task != TASK_NULL) {
+ 			sweet_sample_task(name, proc_pid(p), task);
+@@ -77,8 +94,31 @@
+ 	printf("CACTUS IOS16: sampling %s first=%ds period=%ds\n",
+ 	    sweet_sample_names, first, period);
++#if defined(CACTUS)
++	int repair = cactus_vtimer_repair_if_needed();
++	fbcon_stage53_progress(repair == 1 ? "ST99 timer PPI restored" :
++	    repair == 0 ? "ST99 timer PPI enabled" :
++	    "ST99 timer PPI repair failed");
++	const unsigned int irq_start =
++	    __atomic_load_n(&cactus_vtimer_irq_count, __ATOMIC_RELAXED);
++#endif
+ 	(void)tsleep(&chan, PZERO, "sweetsmp", first * hz);
++#if defined(CACTUS)
++	const unsigned int irq_after =
++	    __atomic_load_n(&cactus_vtimer_irq_count, __ATOMIC_RELAXED);
++	if (irq_after == irq_start) {
++		fbcon_stage53_progress("ST99 timer wait woke, no IRQ");
++		(void)cactus_vtimer_repair_if_needed();
++	} else {
++		fbcon_stage53_progress("ST99 timer IRQ and wait OK");
++	}
++#endif
+ 	for (int i = 0; i < 60; i++) {
+ 		printf("SMP --- sample %d\n", i);
++#if defined(CACTUS)
++		char message[64];
++		snprintf(message, sizeof(message), "ST99 process sample %d", i);
++		fbcon_stage53_progress(message);
++#endif
+ 		proc_iterate(PROC_ALLPROCLIST, sweet_sample_proc, NULL, NULL, NULL);
+ 		(void)tsleep(&chan, PZERO, "sweetsmp", period * hz);
+ 	}
+diff --git a/bsd/kern/sweet_amfi.c b/bsd/kern/sweet_amfi.c
+--- a/bsd/kern/sweet_amfi.c
++++ b/bsd/kern/sweet_amfi.c
+@@ -292,5 +292,15 @@
+ sweet_sandbox_syscall(struct proc *p, int call, __unused user_addr_t arg)
+ {
++#if defined(CACTUS)
++	/* A genuine Apple launchd sandbox syscall proves we passed dyld entry.
++	 * Preserve that milestone in the bottom panel exactly once. */
++	static bool cactus_launchd_sandbox_seen;
++	if (!cactus_launchd_sandbox_seen && proc_pid(p) == 1 && call == 2) {
++		cactus_launchd_sandbox_seen = true;
++		extern void fbcon_stage53_progress(const char *);
++		fbcon_stage53_progress("ST99 Apple launchd sandbox op2");
++	}
++#endif
+ 	if (call >= 0 && call < 64 && !(sweet_sandbox_seen & (1ULL << call))) {
+ 		sweet_sandbox_seen |= 1ULL << call;
+ 		char name[32];
+diff --git a/bsd/vm/vm_unix.c b/bsd/vm/vm_unix.c
+--- a/bsd/vm/vm_unix.c
++++ b/bsd/vm/vm_unix.c
+@@ -2894,5 +2894,7 @@
+ #if defined(CACTUS)
+ 	if (proc_getpid(p) == 1) {
++		extern void fbcon_stage53_progress(const char *);
++		fbcon_stage53_progress("ST99 launchd dyld cache map enter");
+ 		printf("CACTUS IOS16: launchd dyld cache map begin files=%u mappings=%u\n",
+ 		    files_count, mappings_count);
+ 	}
+@@ -3005,6 +3007,10 @@
+ done:
+ #if defined(CACTUS)
+ 	if (proc_getpid(p) == 1) {
++		extern void fbcon_stage53_progress(const char *);
++		fbcon_stage53_progress(kr == KERN_SUCCESS ?
++		    "ST99 launchd dyld cache map OK" :
++		    "ST99 launchd dyld cache map FAILED");
+ 		printf("CACTUS IOS16: launchd dyld cache map result=%d\n", kr);
+ 	}
+ #endif
+diff --git a/bsd/kern/kern_exit.c b/bsd/kern/kern_exit.c
+--- a/bsd/kern/kern_exit.c
++++ b/bsd/kern/kern_exit.c
+@@ -1315,5 +1315,7 @@
+ #if defined(CACTUS)
+ 	if (error == 0 && req->newptr != 0 && initproc_spawned != 0) {
++		extern void fbcon_stage53_progress(const char *);
++		fbcon_stage53_progress("ST99 Apple launchd reached main");
+ 		printf("CACTUS IOS16: launchd reached main (kern.initproc_spawned=1)\n");
+ 	}
+ #endif

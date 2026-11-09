@@ -904,6 +904,13 @@
       "source": "xnu/patches/devices/cactus/0127-cactus-ios16-dyld-codesign-optin.patch",
       "upstream_name": "0127-cactus-ios16-dyld-codesign-optin.patch",
       "sha256": "d29d8eb622a6da863f46407f7ac20884187f7b6719c8c0761b6a323b72eb0d88"
+    },
+    {
+      "order": 128,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0128-cactus-ios16-launchd-timer-service-progress.patch",
+      "upstream_name": "0128-cactus-ios16-launchd-timer-service-progress.patch",
+      "sha256": "c6ac66739c40db14d74eb4988ea3390a4c517b3674855c36a35b5ac05d1f16e9"
     }
   ]
 }
