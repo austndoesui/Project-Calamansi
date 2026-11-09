@@ -1,6 +1,6 @@
 # Cactus XNU working notes
 
-**November 3, 2026 hardware update:** Stage62 was flashed successfully on Redmi 6A `<REDACTED_DEVICE_SERIAL>`. COM25 captured 204 valid frames, no corrupt frames, 12 missing sequences; strict capture validation was INCOMPLETE due to gaps. All eight physical redistributor records survived (`PIDR2=0x3b`), CPU0 frame `0x0c100000` had `TYPER=0`, and MPIDR was `0x80000000`. Capture: `../usb-captures/stage-cactus-20261103-002545-681`. The Stage61 native-XNU mapping/select failure remains unresolved. The next consolidated build requirements are in [Stage63 plan](docs/STAGE63-CONSOLIDATED-BRINGUP.md); no Stage63 image has been built yet.
+**November 3, 2026 hardware update:** Stage62 was flashed successfully on Redmi 6A `<REDACTED_DEVICE_SERIAL>`. COM25 captured 204 valid frames, no corrupt frames, 12 missing sequences; strict capture validation was INCOMPLETE due to gaps. All eight physical redistributor records survived (`PIDR2=0x3b`), CPU0 frame `0x0c100000` had `TYPER=0`, and MPIDR was `0x80000000`. Capture: `../usb-captures/stage-cactus-20261103-002545-681`. The Stage61 native-XNU mapping/select failure remains unresolved. The next consolidated build requirements are in [Stage63 plan](current-tests-and-issues/STAGE63-CONSOLIDATED-BRINGUP.md); no Stage63 image has been built yet.
 
 **Stage63 kernel build:** CACTUS DEVELOPMENT GitHub run `41507227468`
 completed successfully from patch `0099`/commit `8e09cda`. Downloaded kernel
@@ -20,7 +20,7 @@ without changing the signed Stage61 XNU payload. Built Android v2 boot
 image `shim/out/cactus/cactus-trace-stage-62-boot.img` (45,541,376 bytes),
 SHA256 `f7c27939c9ff8a41d386034a746b75f680757f9189a990539761d8c44ac1354d`,
 strict XNU/ADT/RAMDisk guard PASS, **51/51** WSL shim tests PASS. No Stage62
-hardware test yet; see `shim/TRACE-STAGE62.md`.
+hardware test yet; see `current-tests-and-issues/shim-traces/TRACE-STAGE62.md`.
 
 **PRIOR: Stage61 GICR identity-guard image built and physically tested.**
 Stage61 source commit `bf9dee9` on `stage61-cactus-gicr-id-guard` and
@@ -32,7 +32,7 @@ Strict relocated XNU/ADT/RAMDisk guard PASS, 50/50 WSL shim tests PASS.
 Stage61 validates GICR_PIDR2 before accepting bootstrap-CPU affinity,
 preserves on-frame SGI8 enable readback and logs SGI8/PPI27 status.
 **No Stage61 device test yet:** fastboot device was not detected during
-final build checks. See `shim/TRACE-STAGE61.md` for image/provenance and
+final build checks. See `current-tests-and-issues/shim-traces/TRACE-STAGE61.md` for image/provenance and
 guarded hardware test command. No BSD root or PID1 execution proven.
 
 **PRIOR: Stage60 SGI8 / redistributor readback flashed.** Stage59
@@ -55,7 +55,7 @@ and 49/49 WSL tests passed. Stage60 was physically flashed; COM25 captured
 `ST60 SGI8 sent` with `ST60 GIC SGI8 rearm status=0x3ff00000040`.
 Thus SGI8's redistributor enable was also clear, and no pending Group1
 interrupt was observed. No BSD root mount/PID1 execution proven.
-See `shim/TRACE-STAGE60.md`.
+See `current-tests-and-issues/shim-traces/TRACE-STAGE60.md`.
 
 **PRIOR: Stage56 CPU synchronization diagnostic FLASHED; processor_start returned.**
 Stage55 was successfully flashed and the phone's native screen stopped at
@@ -68,7 +68,7 @@ succeeded after correcting C++ linkage. The distinct boot image
 passes the exact native XNU/ADT/RAMDisk guard and **45/45** WSL shim tests.
 Stage56 was physically flashed and its native framebuffer reached
 `ST56 CPU processor_start done`; BSD/PID1 remain unconfirmed.
-See `shim/TRACE-STAGE56.md` for exact code pins, source commit and test command.
+See `current-tests-and-issues/shim-traces/TRACE-STAGE56.md` for exact code pins, source commit and test command.
 
 **PRIOR: Stage55 BSD-GATE + STATIC DIAGNOSTIC PID1 IMAGE FLASHED; KPERF ENTRY REACHED.**
 Stage54's physical framebuffer now proves `ST54 vm_set_restrictions done`, after
@@ -80,7 +80,7 @@ Stage55 adds markers before/after KPERF and BSD gates, plus a signed static
 diagnostic PID1 as an 11th in-memory root segment, via `rd=md0`. The relocated
 ADT RAMDisk pointer bug has been corrected, and all **44** shim tests and
 native-image guards pass in Ubuntu WSL. Stage55 was flashed successfully and
-reached `ST55 KPERF early enter`. See `shim/TRACE-STAGE55.md`. Neither BSD
+reached `ST55 KPERF early enter`. See `current-tests-and-issues/shim-traces/TRACE-STAGE55.md`. Neither BSD
 entry nor PID1 nor original iOS16 dyld/launchd are device-proven.
 
 **PRIOR: Stage54 IOKit/BSD DEBUG IMAGE BUILT; STAGE54 SCREEN PROGRESS CONFIRMED.**
@@ -91,7 +91,7 @@ Static machine-code/ADT verification, boot-image validation and **43**
 shim unit tests passed. New framebuffer progress checks surround IOKit
 lockdown/matching, CPU VM restrictions and BSD entry. No fastboot device
 was connected when checked, so the Stage54 image has **not** been flashed.
-See `shim/TRACE-STAGE54.md` for exact binary provenance and hardware gate.
+See `current-tests-and-issues/shim-traces/TRACE-STAGE54.md` for exact binary provenance and hardware gate.
 
 **PRIOR: Stage53 SMALL-FONT XNU IMAGE FLASHED / NATIVE DISPLAY PROVEN.**
 Stage51 showed native XNU console output on the actual phone; Stage52
@@ -111,7 +111,7 @@ corresponds to source marker `PE_lockdown_iokit` before the call.
 Stage54 should instrument its `zalloc_iokit_lockdown()` and
 `StartIOKitMatching()` calls and the subsequent BSD entry boundary.
 The first memory root and static PID 1 can be prepared in parallel.
-See `shim/TRACE-STAGE53.md`, `shim/TRACE-STAGE54-PLAN.md` and
+See `current-tests-and-issues/shim-traces/TRACE-STAGE53.md`, `current-tests-and-issues/shim-traces/TRACE-STAGE54-PLAN.md` and
 `docs/CACTUS-USERLAND-PLAN.md`. The iPhone X iOS 16.7.16 (20H392)
 IPSW is required only for later original-Apple dyld testing.
 
@@ -135,7 +135,7 @@ IPSW is required only for later original-Apple dyld testing.
   `0x4902=(0xff00ff00,0xffff00ff,1)` proves the test colors
   written to and read from layer1. Actual visible output needs user
   observation. No post-handoff XNU trace arrived. Full findings:
-  `shim/TRACE-STAGE48-49.md`.
+  `current-tests-and-issues/shim-traces/TRACE-STAGE48-49.md`.
 - **2026-10-24 Stage48 HARDWARE CAPTURE:** 73 valid CLOG v2 frames,
   zero CRC errors and gaps, from
   `../usb-captures/stage-cactus-20261024-143655-403/session-001-143805-303.bin`.
@@ -208,7 +208,7 @@ IPSW is required only for later original-Apple dyld testing.
   correctly skipped all framebuffer writes. OVL addresses may be
   IOVAs; visible scanout/CPU mapping must still be verified before
   writing to either active buffer. Event-by-event evidence is in
-  `shim/TRACE-STAGE45-COMBINED.md`.
+  `current-tests-and-issues/shim-traces/TRACE-STAGE45-COMBINED.md`.
   Stage46 checks the return from the next init call at VA
   `0xfffffff007ac0c68` (BRK #0xe44); it is built but **hardware
   untested**.
@@ -381,7 +381,7 @@ IPSW is required only for later original-Apple dyld testing.
 - MI logo remains visible, but Stage23 colored RAM markers were not.
   Verify LK `OVL/RDMA` *active scanout* buffer, pitch and format
   before claiming an on-screen XNU console. See
-  [Stage28 plan](docs/STAGE28-FRAMEBUFFER-PLAN.md).
+  Stage28 framebuffer plan (historical; separate plan file is not present).
 
 ## Stage 26 status (2026-10-23)
 
@@ -407,7 +407,7 @@ IPSW is required only for later original-Apple dyld testing.
 - Local Stage31 build/boot-v2 validation and six Stage22–26 tests PASS.
   No Stage31 hardware test: fastboot was not found earlier, and a later
   tool check was blocked by safety review. See
-  [Stage26 detail](shim/TRACE-STAGE26.md).
+  [Stage26 detail](current-tests-and-issues/shim-traces/TRACE-STAGE26.md).
 - Stage26 success gate: **actual XNU code passes the original
   `pmap_map_bd()` mapping failure**; no full boot or visible console
   claimed. The real source fix requires macOS/Xcode build access;
@@ -445,7 +445,7 @@ The user sees the **MI logo** during COM25, but did **not** see the Stage 23 thr
 - SHA-256: `65efa3fdbc9b5e28ca7e3298f9a5ca794939852ebf57a93001f2287d339b155b`.
 - Hardware capture remains **outside Git**: `../usb-captures/stage-cactus-20261023-212828-797/session-001-212942-364.bin`.
 - Decode it: `python shim/decode-cactus-usb.py "CAPTURE.bin" --require-stage25 --show 90`.
-- [Complete event-level proof](shim/TRACE-STAGE25.md) and [historical Cactus notes](docs/CACTUS-BRINGUP-HISTORY.md).
+- [Complete event-level proof](current-tests-and-issues/shim-traces/TRACE-STAGE25.md) and historical Cactus notes (separate history file is not present).
 
 ## Next action: Stage 26 (planned, not built)
 
@@ -471,7 +471,7 @@ applied and `ST67` strings present in the actual compiled Mach-O.
 Corrected boot-v2 SHA256
 `61677c867d9ee7abb4b7b42704201d8f3bd37929f88293053b19d21f67088bd2`.
 Static validation and 16 USB tests passed. Stage67 is **not flashed**.
-See `docs/STAGE67-VFS-AND-STATUS.md`.
+See `current-tests-and-issues/STAGE67-VFS-AND-STATUS.md`.
 
 ## Stage65 PID1 proof and bottom framebuffer bar (2026-11-03)
 
@@ -486,7 +486,7 @@ flashed (SHA256 `ae0dc7bf8b061bc022de860d02dff997e667d8d54fca8606c96d7c90373c783
 COM25 captured 77 clean frames (14 gaps), with native handoff markers.
 Actual green-bar PID1 success **requires owner framebuffer confirmation**;
 there is no kernel/userspace execution evidence after the shim handoff in
-USB captures. See `docs/STAGE65-PID1-BOOT.md`.
+USB captures. See `current-tests-and-issues/STAGE65-PID1-BOOT.md`.
 
 ## Stage64 GIC Apple device-tree fix (2026-11-03)
 
@@ -499,7 +499,7 @@ Stage63 XNU and all framebuffer/ramdisk pins. Offline guard passed; image
 SHA256 `284c88173ed18660027d0eb7ce0e3fb746d5a9475b0b0ce2719435252218ebae`.
 Flashed successfully; COM25 recorded 80 clean frames (11 dropped), with
 physical GICR census and native XNU handoff markers. Native framebuffer
-progress after handoff remains unverified. See `docs/STAGE64-GIC-ADT-FIX.md`.
+progress after handoff remains unverified. See `current-tests-and-issues/STAGE64-GIC-ADT-FIX.md`.
 
 ## Workflow reminders
 
@@ -519,7 +519,7 @@ Stage51 boot image built with a revision-specific static XNU/ADT guard
 and revised runtime checks, SHA256
 `b665bd87c63236db8b05fd171cf5a39e4c5c240e96f3318e16e6af29e63e910c`.
 **Hardware proven:** Stage51 owner saw the XNU framebuffer
-`kprintf startup complete` line. See `shim/TRACE-STAGE51.md`.
+`kprintf startup complete` line. See `current-tests-and-issues/shim-traces/TRACE-STAGE51.md`.
 
 # Stage52 kernel/display progress (2026-10-24)
 
@@ -532,4 +532,4 @@ Stage52 boot image validated and flashed, SHA256
 `1db5be4481dc79c92b3dc68a26929d2b57a0d3dece606379689a3741c576869a`.
 **41 shim tests passed; 79 valid COM25 frames and Stage52 preflight
 passed.** Native on-screen progress after handoff is awaiting
-observation. See `shim/TRACE-STAGE52.md`.
+observation. See `current-tests-and-issues/shim-traces/TRACE-STAGE52.md`.

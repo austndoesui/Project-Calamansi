@@ -69,4 +69,4 @@ MTK eMMC are not the Benesse device configuration. A native XNU
 console milestone does not establish working root mounting or iOS
 16 userspace.
 
-Detailed near-term acceptance checks: `../shim/TRACE-STAGE54-PLAN.md`.
+Detailed near-term acceptance checks: `devices/cactus/current-tests-and-issues/shim-traces/TRACE-STAGE54-PLAN.md`.

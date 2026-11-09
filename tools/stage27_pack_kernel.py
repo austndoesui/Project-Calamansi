@@ -161,7 +161,8 @@ def prepare(kernel: Path, baseline: Path, output: Path, stage51_live_fb=False,
             stage67_vfs_probe=False, stage68_root_pid1=False, stage69_root_pid1=False,
             stage70_minimal_pid1=False, stage71_direct_pid1=False,
             stage72_mockfs_pid1=False, stage73_pid1_vm=False, stage74_physmap_pid1=False, stage75_exec_read=False, stage76_pid1_shadow=False, stage77_pid1_wired=False,
-            ramdisk: Path | None = None):
+            ramdisk: Path | None = None, extra_boot_args: str = "",
+            root_device: str = "md0"):
     if stage77_pid1_wired and not stage76_pid1_shadow:
         raise ValueError("Stage77 requires Stage76")
     if stage76_pid1_shadow and not stage75_exec_read:
@@ -297,12 +298,20 @@ def prepare(kernel: Path, baseline: Path, output: Path, stage51_live_fb=False,
             adt_blob = stage64_cactus_gic_adt(adt_blob)
         adt_path.write_bytes(adt_blob)
         cmdline = old["cmdline"]
+        if root_device not in ("md0", "emmcroot0"):
+            raise ValueError(f"unsupported cactus root selection: {root_device}")
+        if root_device != "md0" and ramdisk is None:
+            raise ValueError("external root requires the audited RAMDisk payload layout")
         if ramdisk is not None:
             if not ramdisk.is_file() or ramdisk.stat().st_size == 0:
                 raise ValueError("diagnostic RAMDisk is absent or empty")
             if any(arg.startswith("rd=") for arg in cmdline.split()):
                 raise ValueError("baseline already has a root-device argument")
-            cmdline = cmdline.strip() + " rd=md0"
+            cmdline = cmdline.strip() + " rd=" + root_device
+        if extra_boot_args:
+            if not extra_boot_args.isascii() or "\x00" in extra_boot_args or len(extra_boot_args) > 256:
+                raise ValueError("invalid additional boot arguments")
+            cmdline = cmdline.strip() + " " + extra_boot_args.strip()
         new, info = mkpayload.build(str(kernel), str(adt_path), cmdline,
                                     str(ramdisk) if ramdisk is not None else None)
     if info["cputype"] != hex(MACHO_ARM64):

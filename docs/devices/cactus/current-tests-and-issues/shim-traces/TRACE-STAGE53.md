@@ -127,7 +127,7 @@ runtime and `machine_info.max_cpus` before interpreting it as a bug.
 Stage54 should add separate, safe native framebuffer checkpoints
 immediately before/after the two IOKit calls and before/after
 `vm_set_restrictions` and BSD entry; see
-`shim/TRACE-STAGE54-PLAN.md`. Avoid bypassing genuine kernel
+`TRACE-STAGE54-PLAN.md`. Avoid bypassing genuine kernel
 initialization merely because the last status did not advance.
 
 ## iOS 16 userland dependency

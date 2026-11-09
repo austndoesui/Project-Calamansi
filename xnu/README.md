@@ -1,6 +1,6 @@
 # XNU kernel configuration for Cactus
 
-The kernel target is **XNU (xnu-8796 era)** running on the MediaTek Redmi 6A (`cactus`). Cactus support is under bring-up. The phone has executed real XNU instructions and exposed the first memory-mapping panic using the USB diagnostic shim, but it has **not** completed kernel startup.
+The kernel target is **XNU (xnu-8796 era)** running on the MediaTek Redmi 6A (`cactus`). Native XNU, BSD and a minimal PID 1 syscall have been verified on hardware; external iOS HFS mounting and native Apple services are under investigation. See the [current test and issue index](../docs/devices/cactus/current-tests-and-issues/README.md).
 
 ## Patch series and origins
 
@@ -28,4 +28,4 @@ The project also has host-side local tools for replaying small compilations and 
 
 The Stage 25 COM25 capture showed a null pmap L1 entry at VA `0xfffffff04a000000` while `pmap_map_bd()` maps framebuffer PA `0x5e605000..0x5e9fa000`. The current hypothesis to test is that `osfmk/arm64/arm_vm_init.c` computed an insufficient early virtual mapping window near `va_l1_end`. Audit the actual early `io_map` allocation range and add the required page tables correctly. Rebuild and prove a genuine execution advance with the USB trace.
 
-See [active handoff](../NOTES.md), [hardware trace](../shim/TRACE-STAGE25.md), and [historical Cactus bring-up](../docs/CACTUS-BRINGUP-HISTORY.md).
+See the [current test index](../docs/devices/cactus/current-tests-and-issues/README.md) and [Stage25 hardware trace](../docs/devices/cactus/current-tests-and-issues/shim-traces/TRACE-STAGE25.md). The Stage25 discussion above is historical and does not describe the current Stage92 blocker.

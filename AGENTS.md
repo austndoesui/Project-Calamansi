@@ -6,7 +6,7 @@ Project Calamansi brings the open-source XNU kernel to the **MediaTek MT6761/MT6
 
 ## Start here
 
-1. Read `README.md`, the target device's `devices/<device>/README.md`, and the latest test record for that device. Cactus hardware evidence is in `docs/devices/cactus/`, including the Stage85 native PID1 syscall milestone.
+1. Read `README.md`, the target device's `devices/<device>/README.md`, and the latest test record for that device. Cactus stage records and active blockers are indexed in `docs/devices/cactus/current-tests-and-issues/README.md`, including the Stage85 native PID1 syscall milestone and Stage92 iPhone X userdata deployment.
 2. Inspect `git status`, the current branch and the patch manifest before editing. Keep unrelated user changes untouched.
 3. Identify whether a change belongs to shared XNU, the MT6765 platform, a particular device, or the host toolchain. Never infer scope from an old filename alone.
 4. State the evidence for hardware claims: local build, offline test, actual fastboot flash, USB handoff, native framebuffer and userspace entry are separate outcomes.

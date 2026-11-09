@@ -51,6 +51,165 @@ static uint32_t usb_diag[16];
 static uint64_t frequency;
 static unsigned online, faulted, heartbeat_count;
 static void mark(unsigned event, uint64_t a, uint64_t b, uint64_t c);
+#if defined(CACTUS_STAGE88_MSDC_READ) && CACTUS_STAGE88_MSDC_READ
+/*
+ * Cactus MT6765 MSDC0: bounded READ-ONLY proof of access to an existing GPT.
+ * The MT6765 Linux DTS defines controller 0 at PA 0x11230000; the register
+ * offsets and interrupt bits are cross-checked with its msdc_reg.h. Probe
+ * while the shim still has identity-mapped physical MMIO and USB logging.
+ * Never issue a write-to-card MMC command or reset/reclock the controller.
+ * A failed probe must not prevent the unchanged XNU handoff.
+ */
+enum {
+    C88_MSDC_PA = 0x11230000u,
+    C88_CFG = 0x00u, C88_INTR = 0x0cu, C88_INTEN = 0x10u,
+    C88_FIFO = 0x14u, C88_RX = 0x1cu, C88_SDC_CFG = 0x30u,
+    C88_CMD = 0x34u, C88_ARG = 0x38u, C88_STS = 0x3cu,
+    C88_RESP = 0x40u, C88_BLKNUM = 0x50u,
+    C88_CMDRDY = 1u << 8, C88_CMDERR = (1u << 9) | (1u << 10),
+    C88_DATAOK = 1u << 12, C88_DATAERR = (1u << 14) | (1u << 15)
+};
+static uint32_t cactus88_mmio(unsigned offset)
+{
+    return *(volatile const uint32_t *)(uintptr_t)(C88_MSDC_PA + offset);
+}
+static void cactus88_write(unsigned offset, uint32_t value)
+{
+    *(volatile uint32_t *)(uintptr_t)(C88_MSDC_PA + offset) = value;
+    __asm__ volatile("dsb sy" ::: "memory");
+}
+static uint64_t cactus88_time(void)
+{
+    uint64_t ticks;
+    __asm__ volatile("mrs %0, cntpct_el0" : "=r"(ticks));
+    return ticks;
+}
+static int cactus88_wait_clear(unsigned offset, uint32_t bits)
+{
+    const uint64_t start = cactus88_time();
+    while (cactus88_time() - start < frequency * 2u)
+        if (!(cactus88_mmio(offset) & bits)) return 0;
+    return -1;
+}
+static int cactus88_command(unsigned opcode, uint32_t arg, int data,
+                             uint32_t *response)
+{
+    if (cactus88_wait_clear(C88_STS, opcode == 13 ? 2u : 1u)) return 1;
+    cactus88_write(C88_INTR, cactus88_mmio(C88_INTR));
+    cactus88_write(C88_ARG, arg);
+    cactus88_write(C88_CMD, opcode | (1u << 7) |
+                   (data ? (1u << 11) | (512u << 16) : 0));
+    const uint64_t start = cactus88_time();
+    while (cactus88_time() - start < frequency * 2u) {
+        uint32_t status = cactus88_mmio(C88_INTR) &
+                          (C88_CMDRDY | C88_CMDERR);
+        if (!status) continue;
+        cactus88_write(C88_INTR, status);
+        if (status & C88_CMDERR) return 2;
+        *response = cactus88_mmio(C88_RESP);
+        return (*response & 0xfdffa080u) ? 3 : 0;
+    }
+    return 4;
+}
+static uint32_t cactus88_le32(const uint8_t *b)
+{
+    return (uint32_t)b[0] | ((uint32_t)b[1] << 8) |
+           ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
+}
+static int cactus88_read_lba(uint32_t sector, uint8_t buf[512],
+                              uint32_t *response)
+{
+    cactus88_write(C88_BLKNUM, 1);
+    cactus88_write(C88_FIFO, cactus88_mmio(C88_FIFO) | (1u << 31));
+    if (cactus88_wait_clear(C88_FIFO, 1u << 31)) return 5;
+    int err = cactus88_command(17u, sector, 1, response);
+    if (err) return err + 10;
+    const uint64_t start = cactus88_time();
+    unsigned at = 0;
+    int done = 0;
+    while (cactus88_time() - start < frequency * 2u) {
+        uint32_t irq = cactus88_mmio(C88_INTR) &
+                       (C88_DATAOK | C88_DATAERR);
+        if (irq) {
+            cactus88_write(C88_INTR, irq);
+            if (irq & C88_DATAERR) return 20;
+            done = 1;
+        }
+        unsigned available = cactus88_mmio(C88_FIFO) & 255u;
+        while (available >= 4u && at < 512u) {
+            uint32_t word = cactus88_mmio(C88_RX);
+            buf[at++] = (uint8_t)word;
+            buf[at++] = (uint8_t)(word >> 8);
+            buf[at++] = (uint8_t)(word >> 16);
+            buf[at++] = (uint8_t)(word >> 24);
+            available -= 4u;
+        }
+        if (done && at == 512u) return 0;
+    }
+    return 21;
+}
+static uint32_t cactus88_header_crc(const uint8_t *b, unsigned size)
+{
+    uint32_t crc = ~0u;
+    for (unsigned i = 0; i < size; i++) {
+        uint8_t value = (i >= 16u && i < 20u) ? 0 : b[i];
+        crc ^= value;
+        for (unsigned j = 0; j < 8; j++)
+            crc = (crc >> 1) ^ (0xedb88320u & (0u - (crc & 1u)));
+    }
+    return ~crc;
+}
+static void cactus88_probe_emmc(void)
+{
+    const uint32_t original_cfg = cactus88_mmio(C88_CFG);
+    const uint32_t original_inten = cactus88_mmio(C88_INTEN);
+    const uint32_t sdc_cfg = cactus88_mmio(C88_SDC_CFG);
+    const uint32_t status = cactus88_mmio(C88_STS);
+    mark(0x8800u, C88_MSDC_PA,
+         ((uint64_t)original_cfg << 32) | sdc_cfg,
+         ((uint64_t)original_inten << 32) | status);
+    /* CKSTB must be set: do not initialize, power-cycle, or retune eMMC. */
+    if (!(original_cfg & (1u << 7))) {
+        mark(0x880fu, 1u, original_cfg, status);
+        return;
+    }
+    cactus88_write(C88_INTEN, 0u);
+    cactus88_write(C88_CFG, original_cfg | (1u << 3));
+    uint32_t r1 = 0;
+    const int cmd13 = cactus88_command(13, 1u << 16, 0, &r1);
+    mark(0x8801u, cmd13, r1, cactus88_mmio(C88_INTR));
+    if (!cmd13 && ((r1 >> 9) & 15u) == 4u) {
+        const uint32_t locations[2] = {1u, 0x1c01u};
+        for (unsigned i = 0; i < 2u; i++) {
+            uint8_t header[512];
+            uint32_t read_response = 0;
+            int err = cactus88_read_lba(locations[i], header, &read_response);
+            mark(0x8802u, locations[i], err, read_response);
+            if (err) break;
+            const uint32_t magic_lo = cactus88_le32(header);
+            const uint32_t magic_hi = cactus88_le32(header + 4u);
+            const uint32_t size = cactus88_le32(header + 12u);
+            const uint32_t expected_crc = cactus88_le32(header + 16u);
+            uint32_t actual_crc = 0;
+            if (magic_lo == 0x20494645u && magic_hi == 0x54524150u &&
+                size >= 92u && size <= 512u)
+                actual_crc = cactus88_header_crc(header, size);
+            mark(0x8803u, locations[i],
+                 ((uint64_t)magic_hi << 32) | magic_lo,
+                 ((uint64_t)expected_crc << 32) | actual_crc);
+            if (expected_crc && expected_crc == actual_crc) {
+                mark(0x8804u, locations[i], cactus88_le32(header + 80u),
+                     cactus88_le32(header + 84u));
+                break;
+            }
+        }
+    }
+    cactus88_write(C88_INTR, cactus88_mmio(C88_INTR));
+    cactus88_write(C88_CFG, original_cfg);
+    cactus88_write(C88_INTEN, original_inten);
+    mark(0x880eu, original_cfg, original_inten, cactus88_mmio(C88_CFG));
+}
+#endif
 #if defined(CACTUS_STAGE62_GICR_MMIO) && CACTUS_STAGE62_GICR_MMIO
 /* Read the MT6765 GIC registers from EL2 with the shim's MMU disabled,
  * before entering XNU's separate ml_io_map() mappings. Stage61 now panics
@@ -295,7 +454,16 @@ static uint64_t loaded_entry_pa, loaded_boot_args_pa;
 #define STAGE20B_RESTORE_EVENT 0x220bu
 #define STAGE22_TARGET_VA 0xfffffff007ac0c20ull
 #else
-#if defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
+#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+#define STAGE20B_TARGET 0x81ac042cull
+#define STAGE20B_ORIG   0x913e0d29u
+#elif defined(CACTUS_STAGE90_NATIVE) && CACTUS_STAGE90_NATIVE
+#define STAGE20B_TARGET 0x81ac042cull
+#define STAGE20B_ORIG   0x9107dc00u
+#elif defined(CACTUS_STAGE89_NATIVE) && CACTUS_STAGE89_NATIVE
+#define STAGE20B_TARGET 0x81ac042cull
+#define STAGE20B_ORIG   0x97ff38d9u
+#elif defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
 #define STAGE20B_TARGET 0x81ac042cull
 #define STAGE20B_ORIG 0xf9400108u
 #elif defined(CACTUS_STAGE84_NATIVE) && CACTUS_STAGE84_NATIVE
@@ -668,7 +836,15 @@ static int stage20b_arm(void)
     /* Stage78 Xcode 16 rebased boot0 and rewrote arm_init. Use the exact
      * SHA-pinned Stage78 instruction profile before enabling native EL1. */
     if (loaded_entry_pa != 0x8142c488ull ||
-#if defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
+#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+        loaded_boot_args_pa != 0x834c0000ull) return 0;
+#elif defined(CACTUS_STAGE90_NATIVE) && CACTUS_STAGE90_NATIVE
+        loaded_boot_args_pa != 0x834c0000ull) return 0;
+#elif defined(CACTUS_STAGE89_NATIVE) && CACTUS_STAGE89_NATIVE
+        loaded_boot_args_pa != 0x834c0000ull) return 0;
+#elif defined(CACTUS_STAGE86_NATIVE) && CACTUS_STAGE86_NATIVE
+        loaded_boot_args_pa != 0x834bc000ull) return 0;
+#elif defined(CACTUS_STAGE80_NATIVE) && CACTUS_STAGE80_NATIVE
         loaded_boot_args_pa != 0x824c4000ull) return 0;
 #else
         loaded_boot_args_pa != 0x824c0000ull) return 0;
@@ -686,7 +862,25 @@ static int stage20b_arm(void)
         {0x8142e43cull,0xd518a200u},
         {0x8142e494ull,0xd5181000u},
         {0x8142e498ull,0xd5033fdfu},
-#if defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
+#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+        {0x81abfdfcull,0x913e0d29u},
+        {0x81abfe1cull,0x913e0c00u},
+        {0x81abfe24ull,0x90ffade2u},
+        {0x81abfe2cull,0x97ff3b99u},
+        {0x81ac042cull,0x913e0d29u},
+#elif defined(CACTUS_STAGE90_NATIVE) && CACTUS_STAGE90_NATIVE
+        {0x81abfdfcull,0x97ff3b65u},
+        {0x81abfe1cull,0x97ff3b5du},
+        {0x81abfe24ull,0x910003fdu},
+        {0x81abfe2cull,0x9107dc00u},
+        {0x81ac042cull,0x9107dc00u},
+#elif defined(CACTUS_STAGE89_NATIVE) && CACTUS_STAGE89_NATIVE
+        {0x81abfdfcull,0x97ff3a65u},
+        {0x81abfe1cull,0x5280006bu},
+        {0x81abfe24ull,0xb0ffade8u},
+        {0x81abfe2cull,0x92403c09u},
+        {0x81ac042cull,0x97ff38d9u},
+#elif defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
         {0x81abfdfcull,0xd10343ffu},
         {0x81abfe1cull,0xf0000a68u},
         {0x81abfe24ull,0xf0ffade1u},
@@ -1430,7 +1624,16 @@ static void stage45_scanout_probe(uintptr_t dtb)
 #if defined(CACTUS_STAGE48_RUN) && CACTUS_STAGE48_RUN
     /* Last known Stage47 artificial checkpoint must remain untouched. */
     const uintptr_t stage48_pa=
-#if defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
+#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+        0x81ac042cull;
+    const uint32_t stage48_expected=0x913e0d29u;
+#elif defined(CACTUS_STAGE90_NATIVE) && CACTUS_STAGE90_NATIVE
+        0x81ac042cull;
+    const uint32_t stage48_expected=0x9107dc00u;
+#elif defined(CACTUS_STAGE89_NATIVE) && CACTUS_STAGE89_NATIVE
+        0x81ac042cull;
+    const uint32_t stage48_expected=0x97ff38d9u;
+#elif defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
         0x81ac042cull;
     const uint32_t stage48_expected=0xf9400108u;
 #elif defined(CACTUS_STAGE84_NATIVE) && CACTUS_STAGE84_NATIVE
@@ -1833,6 +2036,9 @@ void stage19_probe(uintptr_t dtb)
     online=usb_init(usb_diag);
     mark(S19_USB,online,usb_diag[1],usb_diag[2]);
     if(!online) return;
+#if defined(CACTUS_STAGE88_MSDC_READ) && CACTUS_STAGE88_MSDC_READ
+    cactus88_probe_emmc();
+#endif
 #if defined(CACTUS_STAGE62_GICR_MMIO) && CACTUS_STAGE62_GICR_MMIO
     stage62_gicr_physical_census();
 #endif
@@ -1905,7 +2111,13 @@ void stage19_probe(uintptr_t dtb)
             mark(0x2303,loaded_entry_pa,loaded_boot_args_pa,
                  STAGE22_TARGET_VA);
 #if defined(CACTUS_STAGE28_FIX) && CACTUS_STAGE28_FIX
-#if defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
+#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+            mark(0x2800,0xb22e157d0eedc234ull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE90_NATIVE) && CACTUS_STAGE90_NATIVE
+            mark(0x2800,0x376706e72c2f15ebull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE89_NATIVE) && CACTUS_STAGE89_NATIVE
+            mark(0x2800,0x3fa61a4f8a246abbull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE85_NATIVE) && CACTUS_STAGE85_NATIVE
             mark(0x2800,0xdd39a64cd43de54dull,loaded_entry_pa,loaded_boot_args_pa);
 #elif defined(CACTUS_STAGE84_NATIVE) && CACTUS_STAGE84_NATIVE
             mark(0x2800,0xdae21a356c72c79full,loaded_entry_pa,loaded_boot_args_pa);
