@@ -18,6 +18,7 @@ from check_stage21b_mmu import Payload
 import mkpayload
 
 PIN_ADDRESSES = (0x81abfdfc, 0x81abfe1c, 0x81abfe24, 0x81abfe2c, 0x81ac042c)
+EARLY_BL_PA = 0x8142e3e4
 
 
 def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Path,
@@ -57,7 +58,7 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
     p = Payload(payload_file.read_bytes(), expected_segments=11)
     macho = mkpayload.parse_macho(kernel)
     words = {}
-    for pa in PIN_ADDRESSES:
+    for pa in (*PIN_ADDRESSES, EARLY_BL_PA):
         va = p.virt + pa - p.phys
         seg = next((seg for seg in macho["segs"]
                     if seg["vmaddr"] <= va < seg["vmaddr"] + seg["filesize"]), None)
@@ -70,23 +71,15 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
         words[pa] = ci_word
 
     # Apply all 41 existing native ADT/FB/GIC/eMMC/early instruction guards.
-    base.CHANGED = words
-    if stage == 100:
-        # The new timer code shifted a BL target by 0x20 bytes. The
-        # Stage99 payload encoded 0x940012f0; Stage100 must encode
-        # 0x940012f8 at the exact same physical instruction address.
-        # Pin the value against the SHA-verified Mach-O as well as the
-        # relocated payload; preserve every other early instruction guard.
-        pa = 0x8142e3e4
-        va = p.virt + pa - p.phys
-        seg = next((seg for seg in macho["segs"]
-                    if seg["vmaddr"] <= va < seg["vmaddr"] + seg["filesize"]), None)
-        if seg is None:
-            raise ValueError("Stage100 early BL missing from verified Mach-O")
-        word = struct.unpack_from("<I", kernel, seg["fileoff"] + va - seg["vmaddr"])[0]
-        if word != 0x940012f8 or p.word(pa) != word:
-            raise ValueError(f"Stage100 early BL mismatch CI={word:#x} payload={p.word(pa):#x}")
-        base.PINNED = {**base.PINNED, pa: word}
+    base.CHANGED = {pa: words[pa] for pa in PIN_ADDRESSES}
+    # Verify every live shim runtime pin against the same CI Mach-O used
+    # by the offline validator. Stage100 moves this BL, while earlier
+    # native stages retain the original operand.
+    expected_early_bl = 0x940012f8 if stage == 100 else 0x940012f0
+    if words[EARLY_BL_PA] != expected_early_bl:
+        raise ValueError(f"Stage{stage} early BL unexpected: "
+                         f"{words[EARLY_BL_PA]:#x}, expected {expected_early_bl:#x}")
+    base.PINNED = {**base.PINNED, EARLY_BL_PA: words[EARLY_BL_PA]}
     if stage in (98, 99, 100):
         # Full literal bootargs validation still applies, including this new
         # explicit opt-in. Stage96's original pinned arguments stay unchanged.
@@ -102,6 +95,10 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
         raise ValueError(f"Stage96 source guard branches: expected 5, got {len(blocks)}")
     if not all(f"CACTUS96_WORD_{pa:08X}" in c_source for pa in PIN_ADDRESSES):
         raise ValueError("Stage96 C guard does not use generated pin definitions")
+    runtime_pin = (f"{{0x{EARLY_BL_PA:08x}ull,"
+                   f"CACTUS96_WORD_{EARLY_BL_PA:08X}}}")
+    if runtime_pin not in c_source:
+        raise ValueError("Stage96 runtime early BL guard does not use the generated CI pin")
     if "CACTUS96_KERNEL_PREFIX" not in blocks[4]:
         raise ValueError("Stage96 trace provenance is not pinned")
 

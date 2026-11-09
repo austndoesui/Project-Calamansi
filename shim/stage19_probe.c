@@ -868,7 +868,11 @@ static int stage20b_arm(void)
         {0x8142e18cull,0xd50040bfu},
         {0x8142e220ull,0xd355ff05u},
         {0x8142e3d8ull,0xd5182041u},
+#if defined(CACTUS_STAGE96_NATIVE) && CACTUS_STAGE96_NATIVE
+        {0x8142e3e4ull,CACTUS96_WORD_8142E3E4},
+#else
         {0x8142e3e4ull,0x940012f0u},
+#endif
         {0x8142e3f4ull,0xd5182020u},
         {0x8142e43cull,0xd518a200u},
         {0x8142e494ull,0xd5181000u},

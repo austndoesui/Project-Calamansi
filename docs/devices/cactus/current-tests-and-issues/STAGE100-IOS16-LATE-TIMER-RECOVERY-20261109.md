@@ -72,3 +72,38 @@ unchanged by source preparation.
 Its native handoff, timer recovery, Apple launchd main, and SpringBoard GUI
 remain unverified on hardware. A previous successfully flashed Stage99
 image is still the last verified boot configuration.
+
+## November 10: repaired runtime guard and verified EL1 transition
+
+The first successfully flashed Stage100 image returned to recovery because
+the shim's separate runtime instruction table still pinned the Stage99
+branch at physical address `0x8142e3e4` to `0x940012f0`. The Stage100
+kernel instead contains `0x940012f8`. The early trace showed
+`0x1952` then `0x20ff/0x19ff status=0x510`, proving that the
+runtime `stage20b_arm()` rejected the old pin before EL1 transition.
+The offline checker had been updated, but the runtime pinned table was not.
+
+The shim now consumes `CACTUS96_WORD_8142E3E4` from the same header
+generated from the SHA-verified kernel Mach-O and relocated payload.
+The checker verifies that the runtime table uses this generated macro,
+and retains the expected prior instruction for earlier stages.
+Rebuilt the shim locally using the existing Stage100 CI kernel; all
+41 native instruction guards passed. No XNU recompilation was required.
+
+- Corrected boot image SHA256:
+  `0ab9401518defa81c4d48ec75e300be3f2d403bc98fdb89be506d1e9ac413a4a`.
+- Fastboot device `3184a8a17d2b` identified as `cactus` with
+  battery voltage 3645mV. Boot partition flash and reboot both succeeded.
+- COM25:
+  `usb-captures/stage-cactus-20261110-002127-485/session-001-002139-320.bin`.
+  115 valid frames, zero corruption, **11 missing sequence numbers**.
+  Ordered handoff markers `0x2303`, kernel SHA prefix `0x2800`,
+  `0x3500`, `0x3900` were received. Shim EL1 signal
+  `0x20a1` also appeared, followed by the expected EL2 trap/return
+  diagnostics including `0x20b3` and final status 0.
+
+The strict Stage100 decoder reported NOT VERIFIED because of the 11
+sequence gaps; this is **not** the same hard guard failure as the first
+flash. The trace establishes a successful shim-to-EL1 transition
+through the previous blocking point. Native XNU userspace and the
+SpringBoard GUI still require framebuffer evidence.
