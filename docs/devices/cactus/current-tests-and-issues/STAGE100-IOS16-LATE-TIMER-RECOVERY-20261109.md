@@ -46,3 +46,29 @@ wait OK` status and actual service process sightings.
 
 Stage97 HFS+ userdata and the known working Stage99 boot image are left
 unchanged by source preparation.
+
+## Build and attempted hardware test
+
+- Pushed source commit `fdf28bb` to `main`. GitHub Actions run `42660810594`
+  compiled successfully with all required XNU patches and Stage100 markers.
+- CI kernel SHA256:
+  `feda1f3cf6cac00fea6dab35bbaec508a00117c2c418c4c81798baf3da3c9904`.
+- Packaged payload `shim/out/cactus/payload-stage100.bin`, 33,316,880 bytes,
+  SHA256 `aaa1a24d4ee45d34cfa258a7b870d21bda1e506256958cd907e38cb9cb7f3956`.
+- The Stage100 timer code shifts the early boot BL at `0x8142e3e4` from
+  `0x940012f0` to `0x940012f8`. Its new exact instruction was verified
+  against the CI Mach-O and relocated payload; all 41 guard pins passed.
+- Built `shim/out/cactus/cactus-trace-stage-100-boot.img`, 62,285,824 bytes,
+  Android boot image v2, SHA256
+  `e4ef99a70fab35bfa3e28d4422534b0718d49eabfa7eae605c9c553f06df289e`.
+- Confirmed fastboot serial `3184a8a17d2b` and product `cactus`, then invoked
+  the guarded 60-second COM25 watcher/fastboot flash runner.
+  **The fastboot send failed**, reporting
+  `FAILED (remote: 'low power, need battery charging.')`. The phone reported
+  `battery-voltage: 3502mV`; `battery-level` was unsupported by this bootloader.
+  The runner did not issue reboot, and no Stage100 boot image was flashed.
+
+**Hardware outcome:** Stage100 is built and ready to retry after charging.
+Its native handoff, timer recovery, Apple launchd main, and SpringBoard GUI
+remain unverified on hardware. A previous successfully flashed Stage99
+image is still the last verified boot configuration.

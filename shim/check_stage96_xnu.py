@@ -71,6 +71,22 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
 
     # Apply all 41 existing native ADT/FB/GIC/eMMC/early instruction guards.
     base.CHANGED = words
+    if stage == 100:
+        # The new timer code shifted a BL target by 0x20 bytes. The
+        # Stage99 payload encoded 0x940012f0; Stage100 must encode
+        # 0x940012f8 at the exact same physical instruction address.
+        # Pin the value against the SHA-verified Mach-O as well as the
+        # relocated payload; preserve every other early instruction guard.
+        pa = 0x8142e3e4
+        va = p.virt + pa - p.phys
+        seg = next((seg for seg in macho["segs"]
+                    if seg["vmaddr"] <= va < seg["vmaddr"] + seg["filesize"]), None)
+        if seg is None:
+            raise ValueError("Stage100 early BL missing from verified Mach-O")
+        word = struct.unpack_from("<I", kernel, seg["fileoff"] + va - seg["vmaddr"])[0]
+        if word != 0x940012f8 or p.word(pa) != word:
+            raise ValueError(f"Stage100 early BL mismatch CI={word:#x} payload={p.word(pa):#x}")
+        base.PINNED = {**base.PINNED, pa: word}
     if stage in (98, 99, 100):
         # Full literal bootargs validation still applies, including this new
         # explicit opt-in. Stage96's original pinned arguments stay unchanged.
