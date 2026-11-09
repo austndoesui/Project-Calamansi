@@ -454,7 +454,14 @@ static uint64_t loaded_entry_pa, loaded_boot_args_pa;
 #define STAGE20B_RESTORE_EVENT 0x220bu
 #define STAGE22_TARGET_VA 0xfffffff007ac0c20ull
 #else
-#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+#if defined(CACTUS_STAGE96_NATIVE) && CACTUS_STAGE96_NATIVE
+#include "out/cactus/stage96-pins.h"
+#define STAGE20B_TARGET 0x81ac042cull
+#define STAGE20B_ORIG   CACTUS96_WORD_81AC042C
+#elif defined(CACTUS_STAGE95_NATIVE) && CACTUS_STAGE95_NATIVE
+#define STAGE20B_TARGET 0x81ac042cull
+#define STAGE20B_ORIG   0x913a5400u
+#elif defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
 #define STAGE20B_TARGET 0x81ac042cull
 #define STAGE20B_ORIG   0x913e0d29u
 #elif defined(CACTUS_STAGE90_NATIVE) && CACTUS_STAGE90_NATIVE
@@ -836,7 +843,11 @@ static int stage20b_arm(void)
     /* Stage78 Xcode 16 rebased boot0 and rewrote arm_init. Use the exact
      * SHA-pinned Stage78 instruction profile before enabling native EL1. */
     if (loaded_entry_pa != 0x8142c488ull ||
-#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+#if defined(CACTUS_STAGE96_NATIVE) && CACTUS_STAGE96_NATIVE
+        loaded_boot_args_pa != 0x834c0000ull) return 0;
+#elif defined(CACTUS_STAGE95_NATIVE) && CACTUS_STAGE95_NATIVE
+        loaded_boot_args_pa != 0x834c0000ull) return 0;
+#elif defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
         loaded_boot_args_pa != 0x834c0000ull) return 0;
 #elif defined(CACTUS_STAGE90_NATIVE) && CACTUS_STAGE90_NATIVE
         loaded_boot_args_pa != 0x834c0000ull) return 0;
@@ -862,7 +873,19 @@ static int stage20b_arm(void)
         {0x8142e43cull,0xd518a200u},
         {0x8142e494ull,0xd5181000u},
         {0x8142e498ull,0xd5033fdfu},
-#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+#if defined(CACTUS_STAGE96_NATIVE) && CACTUS_STAGE96_NATIVE
+        {0x81abfdfcull,CACTUS96_WORD_81ABFDFC},
+        {0x81abfe1cull,CACTUS96_WORD_81ABFE1C},
+        {0x81abfe24ull,CACTUS96_WORD_81ABFE24},
+        {0x81abfe2cull,CACTUS96_WORD_81ABFE2C},
+        {0x81ac042cull,CACTUS96_WORD_81AC042C},
+#elif defined(CACTUS_STAGE95_NATIVE) && CACTUS_STAGE95_NATIVE
+        {0x81abfdfcull,0x91012400u},
+        {0x81abfe1cull,0x913a5400u},
+        {0x81abfe24ull,0xb0ffade2u},
+        {0x81abfe2cull,0x97ff3c09u},
+        {0x81ac042cull,0x913a5400u},
+#elif defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
         {0x81abfdfcull,0x913e0d29u},
         {0x81abfe1cull,0x913e0c00u},
         {0x81abfe24ull,0x90ffade2u},
@@ -1624,7 +1647,13 @@ static void stage45_scanout_probe(uintptr_t dtb)
 #if defined(CACTUS_STAGE48_RUN) && CACTUS_STAGE48_RUN
     /* Last known Stage47 artificial checkpoint must remain untouched. */
     const uintptr_t stage48_pa=
-#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+#if defined(CACTUS_STAGE96_NATIVE) && CACTUS_STAGE96_NATIVE
+        0x81ac042cull;
+    const uint32_t stage48_expected=CACTUS96_WORD_81AC042C;
+#elif defined(CACTUS_STAGE95_NATIVE) && CACTUS_STAGE95_NATIVE
+        0x81ac042cull;
+    const uint32_t stage48_expected=0x913a5400u;
+#elif defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
         0x81ac042cull;
     const uint32_t stage48_expected=0x913e0d29u;
 #elif defined(CACTUS_STAGE90_NATIVE) && CACTUS_STAGE90_NATIVE
@@ -2111,7 +2140,11 @@ void stage19_probe(uintptr_t dtb)
             mark(0x2303,loaded_entry_pa,loaded_boot_args_pa,
                  STAGE22_TARGET_VA);
 #if defined(CACTUS_STAGE28_FIX) && CACTUS_STAGE28_FIX
-#if defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
+#if defined(CACTUS_STAGE96_NATIVE) && CACTUS_STAGE96_NATIVE
+            mark(0x2800,CACTUS96_KERNEL_PREFIX,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE95_NATIVE) && CACTUS_STAGE95_NATIVE
+            mark(0x2800,0x66d7e63cfd396c2cull,loaded_entry_pa,loaded_boot_args_pa);
+#elif defined(CACTUS_STAGE91_NATIVE) && CACTUS_STAGE91_NATIVE
             mark(0x2800,0xb22e157d0eedc234ull,loaded_entry_pa,loaded_boot_args_pa);
 #elif defined(CACTUS_STAGE90_NATIVE) && CACTUS_STAGE90_NATIVE
             mark(0x2800,0x376706e72c2f15ebull,loaded_entry_pa,loaded_boot_args_pa);

@@ -323,6 +323,14 @@ def main():
                         help="validate Stage84 first-syscall PID1 and exec handoff")
     parser.add_argument("--require-stage85", action="store_true",
                         help="validate Stage85 stack pre-fault and first EL0/EL1 traps")
+    parser.add_argument("--require-stage93", action="store_true",
+                        help="verify Stage93 pre-XNU handoff with lossless USB frames")
+    parser.add_argument("--require-stage94", action="store_true",
+                        help="verify Stage94 pre-XNU handoff with lossless USB frames")
+    parser.add_argument("--require-stage95", action="store_true",
+                        help="verify Stage95 pre-XNU handoff with lossless USB frames")
+    parser.add_argument("--require-stage96", action="store_true",
+                        help="verify Stage96 pre-XNU handoff with lossless USB frames")
     parser.add_argument("--early-level", type=int, choices=[1, 2, 3, 4], default=1,
                         help="expected Stage 15 early diagnostic level")
     parser.add_argument("--show", type=int, default=15)
@@ -334,6 +342,21 @@ def main():
           f"bad_frames={corrupt} unmatched_bytes={noise}")
     print(f"gaps={gaps} duplicates={duplicates} regressions={regressions} "
           f"sessions={[hex(s) for s in sorted({r['session'] for r in records})]}")
+    if args.require_stage93 or args.require_stage94 or args.require_stage95 or args.require_stage96:
+        stage = 96 if args.require_stage96 else 95 if args.require_stage95 else 94 if args.require_stage94 else 93
+        selected = [record for record in records if record["stage"] == stage]
+        required_events = (0x2303, 0x2800, 0x3500, 0x3900)
+        positions = [next((index for index, record in enumerate(selected)
+                           if record["event"] == ev), -1)
+                     for ev in required_events]
+        healthy = (len(selected) >= 75 and not (corrupt or noise or gaps or duplicates or regressions)
+                   and all(index >= 0 for index in positions)
+                   and positions == sorted(positions)
+                   and sum(record["event"] == 0x3500 for record in selected) == 1)
+        print(f"STAGE{stage} PRE-XNU HANDOFF: {'PASS' if healthy else 'NOT VERIFIED'} "
+              f"frames={len(selected)} markers={positions}")
+        if not healthy:
+            raise SystemExit(1)
     counts = collections.Counter(r["event"] for r in records)
     print("events", {hex(e): n for e, n in sorted(counts.items())})
     for r in records[:max(0, args.show)]:

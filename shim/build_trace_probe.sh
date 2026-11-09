@@ -5,9 +5,13 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 STAGE="${1:-3}"
+# Stages93/94/95/96 inherit the Stage91 native eMMC/USB/FB shim controls. Keep
+# the tested Stage91 image and payload untouched while packaging a new kernel.
+REQUESTED_STAGE="$STAGE"
+if [[ "$STAGE" == 93 || "$STAGE" == 94 || "$STAGE" == 95 || "$STAGE" == 96 ]]; then STAGE=91; fi
 case "$STAGE" in
     3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80|81|82|83|84|85|86|87|88|89|90|91) ;;
-    *) echo "usage: $0 [3..91]" >&2; exit 2 ;;
+    *) echo "usage: $0 [3..91|93|94|95|96]" >&2; exit 2 ;;
 esac
 
 OUT="out/cactus/linux-chainload"
@@ -30,8 +34,18 @@ if [[ "$STAGE" -ge 18 ]]; then
         PAYLOAD_SOURCE=out/cactus/payload-stage27.bin
         PREPARED_PAYLOAD="$OUT/stage27-relocated-payload.bin"
     elif [[ "$STAGE" == 91 ]]; then
-        PAYLOAD_SOURCE=out/cactus/payload-stage91.bin
-        PREPARED_PAYLOAD="$OUT/stage91-relocated-payload.bin"
+        if [[ "$REQUESTED_STAGE" == 93 || "$REQUESTED_STAGE" == 94 || "$REQUESTED_STAGE" == 95 || "$REQUESTED_STAGE" == 96 ]]; then
+            # Stage95 rebuilds only the shim; reuses exact SHA-pinned Stage94 XNU.
+            if [[ "$REQUESTED_STAGE" == 95 ]]; then
+                PAYLOAD_SOURCE="out/cactus/payload-stage94.bin"
+            else
+                PAYLOAD_SOURCE="out/cactus/payload-stage${REQUESTED_STAGE}.bin"
+            fi
+            PREPARED_PAYLOAD="$OUT/stage${REQUESTED_STAGE}-relocated-payload.bin"
+        else
+            PAYLOAD_SOURCE=out/cactus/payload-stage91.bin
+            PREPARED_PAYLOAD="$OUT/stage91-relocated-payload.bin"
+        fi
     elif [[ "$STAGE" == 90 ]]; then
         # Exact CI kernel with writable native HFS+ root on eMMC userdata.
         PAYLOAD_SOURCE=out/cactus/payload-stage90.bin
@@ -191,7 +205,24 @@ if [[ "$STAGE" -ge 18 ]]; then
     elif [[ "$STAGE" == 33 ]]; then
         python3 check_stage28_pmap.py "$PREPARED_PAYLOAD"
     elif [[ "$STAGE" == 91 ]]; then
-        python3 check_stage91_xnu.py "$PREPARED_PAYLOAD" --root ../_build/ios16-runtime/stage87-guestfs.hfs
+        if [[ "$REQUESTED_STAGE" == 93 ]]; then
+            python3 check_stage93_xnu.py "$PREPARED_PAYLOAD" --root ../_build/ios16-runtime/stage87-guestfs.hfs
+        elif [[ "$REQUESTED_STAGE" == 96 ]]; then
+            python3 check_stage96_xnu.py \
+                --kernel ../_build/_xnu-ci-worktree/_artifacts/run8/kernel.development.cactus \
+                --sums ../_build/_xnu-ci-worktree/_artifacts/run8/SHA256SUMS \
+                --payload "$PREPARED_PAYLOAD" \
+                --root ../_build/ios16-runtime/stage87-guestfs.hfs
+        elif [[ "$REQUESTED_STAGE" == 94 || "$REQUESTED_STAGE" == 95 ]]; then
+            python3 check_stage94_xnu.py "$PREPARED_PAYLOAD" --root ../_build/ios16-runtime/stage87-guestfs.hfs
+            if [[ "$REQUESTED_STAGE" == 95 ]]; then
+                python3 check_stage95_shim_guards.py \
+                    --kernel ../_build/_xnu-ci-worktree/_artifacts/run7/kernel.development.cactus \
+                    --payload "$PREPARED_PAYLOAD"
+            fi
+        else
+            python3 check_stage91_xnu.py "$PREPARED_PAYLOAD" --root ../_build/ios16-runtime/stage87-guestfs.hfs
+        fi
     elif [[ "$STAGE" == 90 ]]; then
         python3 check_stage90_xnu.py "$PREPARED_PAYLOAD" --root ../_build/ios16-runtime/stage87-guestfs.hfs
     elif [[ "$STAGE" == 89 ]]; then
@@ -563,6 +594,9 @@ if [[ "$STAGE" -ge 8 ]]; then
       if [[ "$STAGE" == 89 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE89_NATIVE=1); fi
       if [[ "$STAGE" == 90 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE90_NATIVE=1); fi
       if [[ "$STAGE" == 91 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE91_NATIVE=1); fi
+      if [[ "$REQUESTED_STAGE" == 93 || "$REQUESTED_STAGE" == 94 || "$REQUESTED_STAGE" == 95 || "$REQUESTED_STAGE" == 96 ]]; then EXTRA_DEFINES[0]="-DCACTUS_TRACE_STAGE=$REQUESTED_STAGE"; fi
+      if [[ "$REQUESTED_STAGE" == 95 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE95_NATIVE=1); fi
+      if [[ "$REQUESTED_STAGE" == 96 ]]; then EXTRA_DEFINES+=(-DCACTUS_STAGE96_NATIVE=1); fi
     else
       SOURCES+=(stage14_probe)
     fi
@@ -608,7 +642,7 @@ PY
 
 gzip -9 -c "$PREFIX-Image" > "$PREFIX.gz"
 cat "$PREFIX.gz" "$DTB" > "$PREFIX.gz-dtb"
-IMAGE="$PWD/out/cactus/cactus-trace-stage-$STAGE-boot.img"
+IMAGE="$PWD/out/cactus/cactus-trace-stage-$REQUESTED_STAGE-boot.img"
 if [[ "$STAGE" == 18 ]]; then
   # Keep the first hardware-tested Stage18 image intact for comparing
   # its reproducible unaligned-payload data abort with this fix.

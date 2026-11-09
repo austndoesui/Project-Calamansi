@@ -11,18 +11,31 @@ automatically establish every earlier milestone on its own.
 | --- | --- | --- |
 | Native XNU and minimal userspace | [Stage85](STAGE85-PID1-STACK-EXEC-FAULT.md): native PID 1 reached a real EL0 `getpid()` syscall; on-device framebuffer indicator observed. | This tested a minimal custom init, not Apple's full userspace. |
 | Real Apple files | [iOS runtime HFS staging](IOS16-RUNTIME-HFS-STAGING-20261108.md) and [Stage92](STAGE92-IPHONE-X-USERDATA-BOOT-20261109.md): iPhone X 20H392 OS, cryptexes, dyld and SpringBoard extracted and packaged. | Apple service execution and graphical runtime unverified. |
-| eMMC / root block open | [Stage91](STAGE91-ROOT-BLOCK-OPEN-20261108.md): root-open patch built; diagnostic boot flashed. | Post-handoff framebuffer result of `bdevvp` open/mount not yet confirmed. |
+| eMMC / root block open | [Stage92 framebuffer follow-up](STAGE93-IOS16-GUI-INTEGRATION-20261109.md): device `2:1` opened with error 0 and HFS `LOSRoot` mounted on `b(2,1)`; XNU reached `exec launchd`. | Apple launchd main, dyld startup, service spawning and GUI are unverified. |
 | iPhone X userdata deployment | [Stage92](STAGE92-IPHONE-X-USERDATA-BOOT-20261109.md): 16 GiB root and sparse image byte-for-byte verified; main flash reached 184/185 chunks and five-chunk tail repair succeeded. | No full physical eMMC readback. |
 | USB trace | [Stage92](STAGE92-IPHONE-X-USERDATA-BOOT-20261109.md): 91 valid prehandoff frames with zero decoding errors, including native XNU handoff marker. | Prehandoff trace does not show kernel root mount or `launchd`. |
 
-**Next diagnostic:** inspect the device's native framebuffer immediately after
-the Stage91 kernel handoff for `bdevvp` error code/rootdev, HFS mount
-progress, or a real Apple `launchd` failure. A successful boot into iOS or
-SpringBoard has **not** been demonstrated.
+**Stage93:** [Attempted integrated iOS16 GUI bring-up](STAGE93-IOS16-GUI-INTEGRATION-20261109.md).
+Its CI build silently skipped the integration patch; the device booted an
+unmodified kernel and showed the previous native framebuffer status.
+**Stage94:** [Combined iOS16 service and dyld mapping fixes](STAGE94-IOS16-DYLD-SHARED-REGION-20261109.md)
+corrects the skipped patch, starts native service sampling, and retries the
+failed dyld shared-region mapping on cactus. CI explicitly verifies that
+the kernel includes all of these changes. Its first hardware test hit the
+stale Stage91 shim guard, causing a recovery reboot before native handoff.
+**Stage95:** [Corrected shim instruction guards](STAGE95-SHIM-GUARD-CORRECTION-20261109.md)
+verified the exact CI Mach-O, relocated payload, and C source guard values
+before build; a hardware flash returned **91 valid COM25 frames and verified
+native XNU handoff**. Its framebuffer confirms native HFS mount and the GUI
+HID/sampler, but dyld shared-region mapping still returned error `0x4`.
+**Stage96:** [4 KiB dyld shared-region fix](STAGE96-IOS16-DYLD-4K-SHARED-REGION-20261109.md)
+built and flashed successfully. Native XNU handoff markers appeared in a
+partially lossy COM25 capture. Apple launchd main and SpringBoard GUI remain
+**unverified**.
 
 ## Reports and traces
 
-- [Stage63–Stage92 test records](.) — numbered device bring-up,
+- [Stage63–Stage96 test records](.) — numbered device bring-up,
   kernel/boot diagnostics, and filesystem experiments.
 - [Older shim stage traces](shim-traces/) — historical `TRACE-STAGE*`
   records moved out of the shim source directory.
