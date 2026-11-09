@@ -79,22 +79,19 @@ diff --git a/iokit/Kernel/arm/hid/SweetHID.cpp b/iokit/Kernel/arm/hid/SweetHID.c
 diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
 --- a/bsd/kern/bsd_init.c
 +++ b/bsd/kern/bsd_init.c
-@@ -1099,8 +1099,15 @@
- #endif
- 
+@@ -1348,5 +1348,12 @@
  	vm_init_before_launchd();
- 
+ #if defined(CACTUS)
+ 	fbcon_stage53_progress("ST68 PID1 VM ready");
+ #endif
++
 +#if defined(CACTUS)
 +	/* The Sweet sampler is normally started from the UFS driver.
 +	 * Cactus boots Apple HFS from eMMC, so start it here instead. */
 +	extern void sweet_sample_start(void);
 +	sweet_sample_start();
 +#endif
-+
- #if CONFIG_XNUPOST
- 	int result = bsd_list_tests();
- 	result = bsd_do_post();
- 	if (result != 0) {
+ 
 diff --git a/bsd/dev/sweet_sample.c b/bsd/dev/sweet_sample.c
 --- a/bsd/dev/sweet_sample.c
 +++ b/bsd/dev/sweet_sample.c

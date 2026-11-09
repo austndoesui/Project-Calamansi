@@ -1,0 +1,40 @@
+diff --git a/osfmk/vm/vm_shared_region.c b/osfmk/vm/vm_shared_region.c
+--- a/osfmk/vm/vm_shared_region.c
++++ b/osfmk/vm/vm_shared_region.c
+@@ -2375,6 +2375,36 @@
+ 		cur_prot,
+ 		max_prot,
+ 		VM_INHERIT_SHARE);
++#if defined(CACTUS)
++	/*
++	 * The cactus 4 KiB pmap can reject an ARM64 nested shared-region
++	 * submap (KERN_INVALID_ARGUMENT) before dyld's shared cache is usable.
++	 * Retry the identical fixed-address mapping without pmap nesting.
++	 * Preserve the original failure if this also cannot be represented.
++	 */
++	if (kr == KERN_INVALID_ARGUMENT && cpu == CPU_TYPE_ARM64 && is_64bit) {
++		vm_map_kernel_flags_t flat_flags = VM_MAP_KERNEL_FLAGS_FIXED();
++		flat_flags.vm_tag = VM_MEMORY_SHARED_PMAP;
++		flat_flags.vmf_permanent = vmk_flags.vmf_permanent;
++		target_address = sr_pmap_nesting_start;
++		printf("CACTUS IOS16: dyld shared region nested map rejected; retrying flat addr=0x%llx size=0x%llx\n",
++		    (unsigned long long)target_address,
++		    (unsigned long long)sr_pmap_nesting_size);
++		kr = vm_map_enter_mem_object(
++			map,
++			&target_address,
++			sr_pmap_nesting_size,
++			0,
++			flat_flags,
++			sr_handle,
++			sr_offset,
++			TRUE,
++			cur_prot,
++			max_prot,
++			VM_INHERIT_SHARE);
++		printf("CACTUS IOS16: dyld shared region flat retry kr=0x%x\n", kr);
++	}
++#endif
+ 	if (kr != KERN_SUCCESS) {
+ 		SHARED_REGION_TRACE_ERROR(
+ 			("shared_region: enter(%p,%p,%p,%d,%d,%d,%d,%d): "

@@ -188,6 +188,10 @@ jobs:
               '0119-cactus-pid1-exec-handoff-stage84.patch',
               '0120-cactus-pid1-stack-fault-handoff-stage85.patch',
               '0121-cactus-msdc-readonly-root.patch',
+              '0122-cactus-writable-hfs-root.patch',
+              '0123-cactus-root-block-open-errors.patch',
+              '0124-cactus-ios16-gui-bringup.patch',
+              '0125-cactus-ios16-shared-region-mapping.patch',
           )
           failures = []
           for name in required:
@@ -198,6 +202,20 @@ jobs:
           if failures:
               raise SystemExit('Required Cactus patches failed: ' + ', '.join(failures))
           print('REQUIRED CACTUS PATCHES APPLIED:', ', '.join(required))
+          kernel = Path('fakeroot/System/Library/Kernels/kernel.development.cactus')
+          if not kernel.is_file():
+              raise SystemExit('Cactus kernel artifact missing for post-build verification')
+          image = kernel.read_bytes()
+          markers = (
+              b'CACTUS IOS16: sampling ',
+              b'CACTUS IOS16: launchd reached main',
+              b'SWEET HID: touch registered panel=',
+              b'CACTUS IOS16: dyld shared region flat retry',
+          )
+          missing = [marker.decode() for marker in markers if marker not in image]
+          if missing:
+              raise SystemExit('Cactus kernel omitted required functional markers: ' + ', '.join(missing))
+          print('CACTUS IOS16 USERLAND BRINGUP MARKERS VERIFIED IN MACH-O')
           PY
           fi
 

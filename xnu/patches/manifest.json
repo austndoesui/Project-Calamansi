@@ -882,7 +882,14 @@
       "scope": "devices/cactus",
       "source": "xnu/patches/devices/cactus/0124-cactus-ios16-gui-bringup.patch",
       "upstream_name": "0124-cactus-ios16-gui-bringup.patch",
-      "sha256": "a7bc11cee33d58f52f8fc81a273f292b583a8ecf179c9a7f7418364b0bb50979"
+      "sha256": "5d9f3a87e0e5cda6681e5963ba7e8c738d2139877d54385d24a91917c9d0ff71"
+    },
+    {
+      "order": 125,
+      "scope": "devices/cactus",
+      "source": "xnu/patches/devices/cactus/0125-cactus-ios16-shared-region-mapping.patch",
+      "upstream_name": "0125-cactus-ios16-shared-region-mapping.patch",
+      "sha256": "47f6701cbea77f41e67b65c65964c5f5467304679269f9615c1f8154a40d20c7"
     }
   ]
 }
