@@ -196,6 +196,7 @@ jobs:
               '0127-cactus-ios16-dyld-codesign-optin.patch',
               '0128-cactus-ios16-launchd-timer-service-progress.patch',
               '0129-cactus-ios16-late-virtual-timer-recovery.patch',
+              '0130-cactus-ios16-emmc-console-log.patch',
           )
           failures = []
           for name in required:
@@ -225,6 +226,7 @@ jobs:
               b'ST99 SpringBoard process exists',
               b'ST100 late PPI restored',
               b'ST100 late PPI enabled',
+              b'CACTUS TRACE: disk flush failed error=',
           )
           missing = [marker.decode() for marker in markers if marker not in image]
           if missing:

@@ -30,7 +30,7 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
     if len(listed) != 1 or listed[0] != kernel_sha:
         raise ValueError("Stage96 kernel does not match CI SHA256SUMS")
 
-    if stage in (98, 99, 100):
+    if stage in (98, 99, 100, 101):
         required = (
             b"CACTUS IOS16: shared-cache CS enforcement disabled by boot argument",
             b"CACTUS IOS16: launchd dyld cache map begin",
@@ -39,7 +39,7 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
         for marker in required:
             if marker not in kernel:
                 raise ValueError(f"Stage{stage} compiled kernel missing {marker!r}")
-    if stage in (99, 100):
+    if stage in (99, 100, 101):
         required = (
             b"ST99 timer PPI enabled",
             b"ST99 timer IRQ and wait OK",
@@ -50,10 +50,14 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
         for marker in required:
             if marker not in kernel:
                 raise ValueError(f"Stage99 compiled kernel missing {marker!r}")
-    if stage == 100:
+    if stage in (100, 101):
         for marker in (b"ST100 late PPI restored", b"ST100 late PPI enabled"):
             if marker not in kernel:
                 raise ValueError(f"Stage100 compiled kernel missing {marker!r}")
+    if stage == 101:
+        for marker in (b"CACTUS TRACE: disk flush failed error=",):
+            if marker not in kernel:
+                raise ValueError(f"Stage101 compiled kernel missing {marker!r}")
 
     p = Payload(payload_file.read_bytes(), expected_segments=11)
     macho = mkpayload.parse_macho(kernel)
@@ -75,12 +79,18 @@ def verify(kernel_file: Path, sums_file: Path, payload_file: Path, root_file: Pa
     # Verify every live shim runtime pin against the same CI Mach-O used
     # by the offline validator. Stage100 moves this BL, while earlier
     # native stages retain the original operand.
-    expected_early_bl = 0x940012f8 if stage == 100 else 0x940012f0
-    if words[EARLY_BL_PA] != expected_early_bl:
+    expected_early_bl = 0x940012f8 if stage in (100, 101) else 0x940012f0
+    if stage == 101:
+        # CI XNU may move the BL when new bsd/dev sources are linked. Pin the
+        # actual Mach-O instruction against its relocated payload and the
+        # generated runtime shim guard below; require a genuine ARM64 BL.
+        if words[EARLY_BL_PA] & 0xFC000000 != 0x94000000:
+            raise ValueError(f"Stage101 early instruction is not BL: {words[EARLY_BL_PA]:#x}")
+    elif words[EARLY_BL_PA] != expected_early_bl:
         raise ValueError(f"Stage{stage} early BL unexpected: "
                          f"{words[EARLY_BL_PA]:#x}, expected {expected_early_bl:#x}")
     base.PINNED = {**base.PINNED, EARLY_BL_PA: words[EARLY_BL_PA]}
-    if stage in (98, 99, 100):
+    if stage in (98, 99, 100, 101):
         # Full literal bootargs validation still applies, including this new
         # explicit opt-in. Stage96's original pinned arguments stay unchanged.
         base.CMD = base.CMD + b" cs_enforcement_disable=1 cs_debug=1"
@@ -126,6 +136,6 @@ if __name__ == "__main__":
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--shim", type=Path, default=Path(__file__).with_name("stage19_probe.c"))
     parser.add_argument("--header", type=Path, default=Path(__file__).parent / "out/cactus/stage96-pins.h")
-    parser.add_argument("--stage", type=int, choices=(96, 98, 99, 100), default=96)
+    parser.add_argument("--stage", type=int, choices=(96, 98, 99, 100, 101), default=96)
     args = parser.parse_args()
     verify(args.kernel, args.sums, args.payload, args.root, args.shim, args.header, args.stage)

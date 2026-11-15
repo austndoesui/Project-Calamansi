@@ -1,0 +1,205 @@
+diff --git a/bsd/dev/cactus_msdc.c b/bsd/dev/cactus_msdc.c
+--- a/bsd/dev/cactus_msdc.c
++++ b/bsd/dev/cactus_msdc.c
+@@ -262,6 +262,27 @@
+     return error;
+ }
+ 
++/* The Stage92/97 filesystem occupies the first 16 GiB of userdata.
++ * A SWEETLOG-compatible 4 MiB + 4 KiB log lives only beyond that end.
++ * Never allow debug writes onto formatted HFS+ or other partitions. */
++#define CACTUS_TRACE_MIN_SECTORS (0x2000000u + 1025u * 8u)
++int
++cactus_trace_write(uint32_t sector_offset, const void *data, uint32_t sectors)
++{
++    if (!cactus_initialized || !cactus_writable ||
++        strcmp(cactus_root_name, "userdata") != 0 ||
++        cactus_root_count < CACTUS_TRACE_MIN_SECTORS ||
++        sector_offset < 0x2000000u || sectors == 0 ||
++        sectors > 128u || sector_offset > cactus_root_count ||
++        sector_offset >= CACTUS_TRACE_MIN_SECTORS ||
++        sectors > CACTUS_TRACE_MIN_SECTORS - sector_offset ||
++        sectors > cactus_root_count - sector_offset) {
++        return EROFS;
++    }
++    return cactus_write_blocks(cactus_root_first + sector_offset,
++        (const uint8_t *)data, sectors);
++}
++
+ static uint32_t
+ cactus_le32(const uint8_t *p)
+ {
+@@ -517,6 +536,12 @@
+            minor(cactus_rootdev), cactus_root_name);
+     printf("CACTUS MSDC: eMMC ready, sectors=%u root=%u %s\n",
+            cactus_capacity, cactus_root_count, cactus_writable ? "writable" : "read-only");
++    if (cactus_writable &&
++        strcmp(cactus_root_name, "userdata") == 0 &&
++        cactus_root_count >= CACTUS_TRACE_MIN_SECTORS) {
++        extern void cactus_trace_start(void);
++        cactus_trace_start();
++    }
+     return 0;
+ }
+ 
+diff --git a/bsd/conf/files b/bsd/conf/files
+--- a/bsd/conf/files
++++ b/bsd/conf/files
+@@ -105,6 +105,7 @@
+ 
+ bsd/dev/memdev.c			standard
+ bsd/dev/cactus_msdc.c			standard
++bsd/dev/cactus_trace.c			standard
+ bsd/dev/sweet_ufs.c			standard
+ bsd/dev/sweet_sample.c			standard
+ bsd/dev/sweet_keys.c			standard
+diff --git a/bsd/dev/cactus_trace.c b/bsd/dev/cactus_trace.c
+new file mode 100644
+--- /dev/null
++++ b/bsd/dev/cactus_trace.c
+@@ -0,0 +1,130 @@
++/* Persistent native XNU console snapshots for Calamansi cactus.
++ * The iOS filesystem occupies exactly the first 16 GiB of userdata.
++ * Only the separately verified slack AFTER that image may hold this log.
++ */
++#if defined(ARM64_BOARD_CONFIG_CACTUS)
++#include <sys/param.h>
++#include <sys/systm.h>
++#include <sys/errno.h>
++#include <kern/thread.h>
++#include <pexpert/pexpert.h>
++#include <libkern/libkern.h>
++#include <stdint.h>
++
++#define CACTUS_TRACE_BLOCK_BYTES 4096u
++#define CACTUS_TRACE_BYTES (4u * 1024u * 1024u)
++#define CACTUS_TRACE_DATA_BLOCKS (CACTUS_TRACE_BYTES / CACTUS_TRACE_BLOCK_BYTES)
++/* 16 GiB / 512: keep the sector index representable in uint32_t. */
++#define CACTUS_TRACE_BASE_SECTOR 0x2000000u
++#define CACTUS_TRACE_SECTORS_PER_BLOCK (CACTUS_TRACE_BLOCK_BYTES / 512u)
++
++extern uint64_t sweet_log_position(void);
++extern uint32_t sweet_log_copy(uint64_t *pos, char *out, uint32_t max);
++extern int cactus_trace_write(uint32_t sector_offset, const void *data, uint32_t blocks);
++extern int hz;
++
++static int cactus_trace_chan;
++static volatile uint32_t cactus_trace_busy;
++static uint64_t cactus_trace_flushed;
++static uint64_t cactus_trace_seq;
++static uint32_t cactus_trace_started;
++
++struct cactus_trace_header {
++    char magic[8];
++    uint32_t version;
++    uint32_t size;
++    uint64_t total;
++    uint64_t seq;
++};
++
++static int
++cactus_trace_flush(void)
++{
++    if (__atomic_exchange_n(&cactus_trace_busy, 1u, __ATOMIC_ACQUIRE)) {
++        return EBUSY;
++    }
++    uint64_t total = sweet_log_position();
++    if (total == cactus_trace_flushed) {
++        __atomic_store_n(&cactus_trace_busy, 0u, __ATOMIC_RELEASE);
++        return 0;
++    }
++    uint64_t oldest = total > CACTUS_TRACE_BYTES ? total - CACTUS_TRACE_BYTES : 0;
++    uint64_t start = cactus_trace_flushed > oldest ? cactus_trace_flushed : oldest;
++    start &= ~(uint64_t)(CACTUS_TRACE_BLOCK_BYTES - 1u);
++    if (start < oldest) {
++        start += CACTUS_TRACE_BLOCK_BYTES;
++    }
++    int error = 0;
++    for (uint64_t p = start; p < total; p += CACTUS_TRACE_BLOCK_BYTES) {
++        uint8_t bytes[CACTUS_TRACE_BLOCK_BYTES];
++        bzero(bytes, sizeof(bytes));
++        uint64_t cursor = p;
++        uint32_t wanted = (uint32_t)MIN((uint64_t)sizeof(bytes), total - p);
++        uint32_t copied = sweet_log_copy(&cursor, (char *)bytes, wanted);
++        if (cursor != p + copied || copied != wanted) {
++            error = EAGAIN;
++            break;
++        }
++        uint32_t slot = (uint32_t)((p % CACTUS_TRACE_BYTES) / CACTUS_TRACE_BLOCK_BYTES);
++        error = cactus_trace_write(CACTUS_TRACE_BASE_SECTOR +
++            (slot + 1u) * CACTUS_TRACE_SECTORS_PER_BLOCK,
++            bytes, CACTUS_TRACE_SECTORS_PER_BLOCK);
++        if (error) {
++            break;
++        }
++    }
++    if (!error) {
++        uint8_t bytes[CACTUS_TRACE_BLOCK_BYTES];
++        struct cactus_trace_header header = {
++            .magic = {'S', 'W', 'E', 'E', 'T', 'L', 'O', 'G'},
++            .version = 1,
++            .size = CACTUS_TRACE_BYTES,
++            .total = total,
++            .seq = ++cactus_trace_seq,
++        };
++        bzero(bytes, sizeof(bytes));
++        memcpy(bytes, &header, sizeof(header));
++        error = cactus_trace_write(CACTUS_TRACE_BASE_SECTOR, bytes,
++            CACTUS_TRACE_SECTORS_PER_BLOCK);
++        if (!error) {
++            cactus_trace_flushed = total;
++        }
++    }
++    __atomic_store_n(&cactus_trace_busy, 0u, __ATOMIC_RELEASE);
++    return error;
++}
++
++/* A one-shot flush on launchd's proven syscall path works even if
++ * the next timed wait never wakes the periodic console worker. */
++int
++cactus_trace_flush_now(void)
++{
++    return cactus_trace_flush();
++}
++
++static void
++cactus_trace_thread(__unused void *arg, __unused wait_result_t result)
++{
++    for (;;) {
++        int error = cactus_trace_flush();
++        if (error && error != EBUSY && error != EAGAIN) {
++            printf("CACTUS TRACE: disk flush failed error=%d\n", error);
++            return;
++        }
++        (void)tsleep(&cactus_trace_chan, PZERO, "cactustrace", hz);
++    }
++}
++
++void
++cactus_trace_start(void)
++{
++    if (cactus_trace_started) {
++        return;
++    }
++    thread_t thread;
++    if (kernel_thread_start(cactus_trace_thread, NULL, &thread) == KERN_SUCCESS) {
++        cactus_trace_started = 1;
++        thread_deallocate(thread);
++    }
++}
++#endif
+diff --git a/bsd/kern/sweet_amfi.c b/bsd/kern/sweet_amfi.c
+--- a/bsd/kern/sweet_amfi.c
++++ b/bsd/kern/sweet_amfi.c
+@@ -303,8 +303,11 @@
+ 		int repair = cactus_vtimer_repair_if_needed();
+ 		fbcon_stage53_progress(repair == 1 ? "ST100 late PPI restored" :
+ 		    repair == 0 ? "ST100 late PPI enabled" :
+ 		    "ST100 late PPI repair failed");
++        /* Capture the launchd edge even if virtual-timer wakeups are lost. */
++        extern int cactus_trace_flush_now(void);
++        (void)cactus_trace_flush_now();
+ 	}
+ #endif
+ 	if (call >= 0 && call < 64 && !(sweet_sandbox_seen & (1ULL << call))) {
+ 		sweet_sandbox_seen |= 1ULL << call;

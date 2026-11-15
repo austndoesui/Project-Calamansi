@@ -918,6 +918,13 @@
       "source": "xnu/patches/devices/cactus/0129-cactus-ios16-late-virtual-timer-recovery.patch",
       "upstream_name": "0129-cactus-ios16-late-virtual-timer-recovery.patch",
       "sha256": "f057acc510a732d9497d1ff59045459d973e66820584d910f9a362a3e75bbe1c"
+    },
+    {
+      "order": 130,
+      "scope": "device:cactus",
+      "source": "xnu/patches/devices/cactus/0130-cactus-ios16-emmc-console-log.patch",
+      "upstream_name": "0130-cactus-ios16-emmc-console-log.patch",
+      "sha256": "40e0ae1e82b2f23acc4ba9f9a37c5938ce5bc0e1b33b17189f5942261fcd0372"
     }
   ]
 }
