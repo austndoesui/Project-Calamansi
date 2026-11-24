@@ -61,7 +61,7 @@ def main():
                 owner = parts[3]
                 # OPPO6765 has an independent compile-profile patch. Cactus
                 # patches contain board-specific VM and early-boot behavior.
-                include = owner == target
+                include = owner == target or (target == "oppo6765" and row["upstream_name"] == "0082-cactus-machine-config.patch")
             if include:
                 selected.append(row)
 
