@@ -268,9 +268,10 @@ index 88e524a..e9a8d40 100644
  #include <pexpert/arm64/VMAPPLE.h>
  
 diff --git a/osfmk/arm/commpage/commpage_asm.s b/osfmk/arm/commpage/commpage_asm.s
+index da0bbba..250e81f 100644
 --- a/osfmk/arm/commpage/commpage_asm.s
 +++ b/osfmk/arm/commpage/commpage_asm.s
-@@ -273,10 +273,23 @@ _pfz_trylock_and_enqueue:
+@@ -273,11 +273,24 @@ _pfz_trylock_and_enqueue:
  	mov		w11, #1			 // locked value = w11 = 1
  
  	// Try to grab the lock
@@ -287,15 +288,16 @@ diff --git a/osfmk/arm/commpage/commpage_asm.s b/osfmk/arm/commpage/commpage_asm
 +	b Ltrylock_enqueue_exit
 +#else
  	casa	w10, w11, [x3]	 // Atomic CAS with acquire barrier
- 	cbz	w10, Ltrylock_enqueue_success
+ 	cbz		w10, Ltrylock_enqueue_success
  
  	mov		x0, #-1			// Failed
  	b Ltrylock_enqueue_exit
 +#endif
  
  	/* We got the lock, enqueue the element */
+ 
 @@ -323,11 +336,24 @@ _pfz_trylock_and_dequeue:
- 	mov		w10, wzr			 // unlock value = w10 = 0
+ 	mov		w10, wzr		 // unlock value = w10 = 0
  	mov		w11, #1			 // locked value = w11 = 1
  
 +#if defined(ARM64_BOARD_CONFIG_OPPO6765)
@@ -311,7 +313,7 @@ diff --git a/osfmk/arm/commpage/commpage_asm.s b/osfmk/arm/commpage/commpage_asm
 +	b Ltrylock_dequeue_exit
 +#else
  	casa	w10, w11, [x2]	 // Atomic CAS with acquire barrier
- 	cbz	w10, Ltrylock_dequeue_success
+ 	cbz		w10, Ltrylock_dequeue_success
  
  	mov		x0, #-1			// Failed
  	b Ltrylock_dequeue_exit
@@ -319,8 +321,8 @@ diff --git a/osfmk/arm/commpage/commpage_asm.s b/osfmk/arm/commpage/commpage_asm
  
  	/* We got the lock, dequeue the element */
  Ltrylock_dequeue_success:
-
 diff --git a/osfmk/mach/arm/vm_param.h b/osfmk/mach/arm/vm_param.h
+index c013288..a39c79c 100644
 --- a/osfmk/mach/arm/vm_param.h
 +++ b/osfmk/mach/arm/vm_param.h
 @@ -133,7 +133,10 @@ extern int PAGE_SHIFT_CONST;
@@ -329,13 +331,12 @@ diff --git a/osfmk/mach/arm/vm_param.h b/osfmk/mach/arm/vm_param.h
  #define MACH_VM_MIN_ADDRESS_RAW 0x0ULL
 -#if defined(XNU_PLATFORM_MacOSX) || defined(XNU_PLATFORM_DriverKit)
 +#if defined(ARM64_BOARD_CONFIG_OPPO6765)
-+/* 4K CPU translation uses the embedded 39-bit VA layout for this compile target. */
++/* 4K pages give OPPO6765 a 39-bit VA, matching the embedded layout. */
 +#define MACH_VM_MAX_ADDRESS_RAW 0x0000000FC0000000ULL
 +#elif defined(XNU_PLATFORM_MacOSX) || defined(XNU_PLATFORM_DriverKit)
  #define MACH_VM_MAX_ADDRESS_RAW 0x00007FFFFE000000ULL
  #else
  #define MACH_VM_MAX_ADDRESS_RAW 0x0000000FC0000000ULL
-
 diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
 --- a/makedefs/MakeInc.def
 +++ b/makedefs/MakeInc.def
