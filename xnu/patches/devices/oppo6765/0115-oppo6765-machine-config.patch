@@ -22,12 +22,10 @@ diff --git a/osfmk/arm64/proc_reg.h b/osfmk/arm64/proc_reg.h
 diff --git a/bsd/conf/Makefile.template b/bsd/conf/Makefile.template
 --- a/bsd/conf/Makefile.template
 +++ b/bsd/conf/Makefile.template
-@@ -48,4 +48,4 @@
- # This provider is built into SWEET; other boards use their normal kext.
+@@ -48,1 +48,1 @@
 -ifeq ($(CURRENT_MACHINE_CONFIG),SWEET)
 +ifneq ($(filter SWEET OPPO6765,$(CURRENT_MACHINE_CONFIG)),)
- SWEET_PTHREAD_ROOT = $(SRCROOT)/bsd/pthread/sweet_libpthread
- 
+
 diff --git a/config/MASTER.arm64.oppo6765 b/config/MASTER.arm64.oppo6765
 new file mode 100644
 --- /dev/null
@@ -154,13 +152,10 @@ new file mode 100644
 diff --git a/libkern/conf/Makefile.template b/libkern/conf/Makefile.template
 --- a/libkern/conf/Makefile.template
 +++ b/libkern/conf/Makefile.template
-@@ -22,5 +22,5 @@
- SFLAGS+= -include meta_features.h
- 
+@@ -22,1 +22,1 @@
 -ifeq ($(CURRENT_MACHINE_CONFIG),SWEET)
 +ifneq ($(filter SWEET OPPO6765,$(CURRENT_MACHINE_CONFIG)),)
- SWEET_AES_ROOT = $(SRCROOT)/libkern/crypto/sweet_bearssl
- 
+
 diff --git a/pexpert/pexpert/arm64/OPPO6765.h b/pexpert/pexpert/arm64/OPPO6765.h
 new file mode 100644
 --- /dev/null
