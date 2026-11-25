@@ -6,6 +6,20 @@ instructions. It deliberately does not add OPPO memory, VA, framebuffer, GIC,
 or timer constants. A successful build is compile evidence only; boot support
 requires a separately verified CPH2179 handoff and memory profile.
 
+diff --git a/osfmk/arm64/proc_reg.h b/osfmk/arm64/proc_reg.h
+--- a/osfmk/arm64/proc_reg.h
++++ b/osfmk/arm64/proc_reg.h
+@@ -220,1 +220,9 @@
+ #define MMU_CLINE   6
++
++#elif defined (ARM64_BOARD_CONFIG_OPPO6765) /* Cortex-A53 */
++
++/* Cortex-A53 instruction and data cache lines are 64 bytes. */
++#define MMU_I_CLINE 6
++
++#define MMU_CLINE   6
++
+
 diff --git a/bsd/conf/Makefile.template b/bsd/conf/Makefile.template
 --- a/bsd/conf/Makefile.template
 +++ b/bsd/conf/Makefile.template
