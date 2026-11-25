@@ -10,8 +10,8 @@ diff --git a/bsd/conf/Makefile.template b/bsd/conf/Makefile.template
 --- a/bsd/conf/Makefile.template
 +++ b/bsd/conf/Makefile.template
 @@ -48 +48 @@
--ifeq ($(CURRENT_MACHINE_CONFIG),SWEET)
-+ifneq ($(filter SWEET OPPO6765,$(CURRENT_MACHINE_CONFIG)),)
+-ifneq ($(filter SWEET CACTUS,$(CURRENT_MACHINE_CONFIG)),)
++ifneq ($(filter SWEET CACTUS OPPO6765,$(CURRENT_MACHINE_CONFIG)),)
 
 diff --git a/config/MASTER.arm64.oppo6765 b/config/MASTER.arm64.oppo6765
 new file mode 100644
@@ -140,8 +140,8 @@ diff --git a/libkern/conf/Makefile.template b/libkern/conf/Makefile.template
 --- a/libkern/conf/Makefile.template
 +++ b/libkern/conf/Makefile.template
 @@ -22 +22 @@
--ifeq ($(CURRENT_MACHINE_CONFIG),SWEET)
-+ifneq ($(filter SWEET OPPO6765,$(CURRENT_MACHINE_CONFIG)),)
+-ifneq ($(filter SWEET CACTUS,$(CURRENT_MACHINE_CONFIG)),)
++ifneq ($(filter SWEET CACTUS OPPO6765,$(CURRENT_MACHINE_CONFIG)),)
 
 diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
 --- a/makedefs/MakeInc.def
@@ -161,8 +161,8 @@ diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
  export ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG := $(shell echo $(CURRENT_ARCH_CONFIG) | tr A-Z a-z)
  ifneq ($(filter arm64,$(ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG)),)
  # sweet's Cortex-A76/A55 have no pointer authentication: stay plain arm64
--ifneq ($(CURRENT_MACHINE_CONFIG),SWEET)
-+ifeq ($(filter SWEET OPPO6765,$(CURRENT_MACHINE_CONFIG)),)
+-ifeq ($(filter SWEET CACTUS,$(CURRENT_MACHINE_CONFIG)),)
++ifeq ($(filter SWEET CACTUS OPPO6765,$(CURRENT_MACHINE_CONFIG)),)
  export ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG := arm64e
  endif
  endif
