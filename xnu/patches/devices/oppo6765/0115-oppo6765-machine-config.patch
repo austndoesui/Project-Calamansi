@@ -159,8 +159,8 @@ diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
 +SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE SWEET OPPO6765
  
  endif
-@@ -58,1 +58,2 @@
- MACHINE_FLAGS_ARM64_SWEET = -DARM64_BOARD_CONFIG_SWEET                -march=armv8.2-a+crypto
+@@ -61,1 +61,2 @@
+ MACHINE_FLAGS_ARM64_BCM2837 = -DARM64_BOARD_CONFIG_BCM2837
 +MACHINE_FLAGS_ARM64_OPPO6765 = -DARM64_BOARD_CONFIG_OPPO6765 -mcpu=cortex-a53 -march=armv8-a
 @@ -260,8 +261,8 @@ ifeq ($(ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG),)
  # Without embdedded device map, use a default arch string
