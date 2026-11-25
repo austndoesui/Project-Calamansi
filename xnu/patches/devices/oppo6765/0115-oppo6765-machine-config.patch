@@ -161,6 +161,66 @@ diff --git a/libkern/conf/Makefile.template b/libkern/conf/Makefile.template
 +ifneq ($(filter SWEET OPPO6765,$(CURRENT_MACHINE_CONFIG)),)
  SWEET_AES_ROOT = $(SRCROOT)/libkern/crypto/sweet_bearssl
 
+diff --git a/pexpert/pexpert/arm64/OPPO6765.h b/pexpert/pexpert/arm64/OPPO6765.h
+new file mode 100644
+--- /dev/null
++++ b/pexpert/pexpert/arm64/OPPO6765.h
+@@ -0,0 +1,27 @@
++/*
++ * Minimal generic ARM64 compile profile for OPPO6765 (MediaTek MT6765,
++ * Cortex-A53). This supplies compile-time CPU properties only; it does not
++ * describe memory, interrupt controller, timer routing, or boot handoff.
++ */
++#ifndef _PEXPERT_ARM64_OPPO6765_H
++#define _PEXPERT_ARM64_OPPO6765_H
++
++#define NO_MONITOR                1
++#define NO_ECORE                  1
++#define OPPO6765                  1
++#define SWEET                     1
++
++#define ARM_ARCH_TIMER
++#define __ARM_ARCH__              8
++#define __ARM_VMSA__              8
++#define __ARM_VFP__               4
++#define __ARM_COHERENT_CACHE__    1
++#define __ARM_DEBUG__             7
++#define __ARM_ENABLE_SWAP__       1
++#define HAS_GIC_V3                1
++
++#ifndef ASSEMBLER
++#define PLATFORM_PANIC_LOG_DISABLED
++#endif
++
++#endif /* _PEXPERT_ARM64_OPPO6765_H */
+
+diff --git a/pexpert/pexpert/arm64/Makefile b/pexpert/pexpert/arm64/Makefile
+--- a/pexpert/pexpert/arm64/Makefile
++++ b/pexpert/pexpert/arm64/Makefile
+@@ -21,1 +21,2 @@
+-	SWEET.h
++	SWEET.h \
++	OPPO6765.h
+
+diff --git a/pexpert/pexpert/arm64/board_config.h b/pexpert/pexpert/arm64/board_config.h
+--- a/pexpert/pexpert/arm64/board_config.h
++++ b/pexpert/pexpert/arm64/board_config.h
+@@ -100,1 +100,1 @@
+-#ifdef ARM64_BOARD_CONFIG_SWEET
++#if defined(ARM64_BOARD_CONFIG_SWEET) && !defined(ARM64_BOARD_CONFIG_OPPO6765)
+@@ -118,1 +118,12 @@
+ #endif  /* ARM64_BOARD_CONFIG_SWEET */
++
++#ifdef ARM64_BOARD_CONFIG_OPPO6765
++#include <pexpert/arm64/OPPO6765.h>
++
++#define MAX_L2_CLINE                   6
++#define MAX_CPUS                       8
++#define MAX_CPU_CLUSTERS               1
++#define CORE_NCTRS                     8 /* Placeholder; no verified PMU mapping */
++
++#endif  /* ARM64_BOARD_CONFIG_OPPO6765 */
++
 diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
 --- a/makedefs/MakeInc.def
 +++ b/makedefs/MakeInc.def

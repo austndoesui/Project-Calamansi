@@ -196,7 +196,7 @@
       "scope": "legacy",
       "source": "xnu/patches/legacy/0026-stage-hfs.sh",
       "upstream_name": "0026-stage-hfs.sh",
-      "sha256": "0981a619d516f990fd3e21ab43e9c52af4b32ecfb606b4fd002d70cc8077a941"
+      "sha256": "bd9f80f0b0c8cf079a36ff2bb0f3a8a8168f33c58063dd453be87724589556bb"
     },
     {
       "order": 26,
@@ -819,7 +819,7 @@
       "scope": "devices/oppo6765",
       "source": "xnu/patches/devices/oppo6765/0115-oppo6765-machine-config.patch",
       "upstream_name": "0115-oppo6765-machine-config.patch",
-      "sha256": "93da7653e79f7af25af4c32e102f9985888ed6f1128b66b65525737f70fc0fca"
+      "sha256": "0090fa4fb3b1adc8e3e992b3e085da25fc8a95ec540cefe3c7503a3a76cdfe37"
     }
   ]
 }
