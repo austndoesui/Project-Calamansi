@@ -151,17 +151,15 @@ diff --git a/libkern/conf/Makefile.template b/libkern/conf/Makefile.template
 diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
 --- a/makedefs/MakeInc.def
 +++ b/makedefs/MakeInc.def
-@@ -29,6 +29,6 @@ SUPPORTED_ARM64_MACHINE_CONFIGS = NONE
+@@ -29,6 +29,7 @@ SUPPORTED_ARM64_MACHINE_CONFIGS = NONE
  else ifneq ($(findstring _host,$(RC_ProjectName)),)
  SUPPORTED_ARM64_MACHINE_CONFIGS = NONE
  else
 -SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE SWEET
 +SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE SWEET OPPO6765
++MACHINE_FLAGS_ARM64_OPPO6765 = -DARM64_BOARD_CONFIG_OPPO6765 -mcpu=cortex-a53 -march=armv8-a
  
  endif
-@@ -61,1 +61,2 @@
- MACHINE_FLAGS_ARM64_BCM2837 = -DARM64_BOARD_CONFIG_BCM2837
-+MACHINE_FLAGS_ARM64_OPPO6765 = -DARM64_BOARD_CONFIG_OPPO6765 -mcpu=cortex-a53 -march=armv8-a
 @@ -260,8 +261,8 @@ ifeq ($(ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG),)
  # Without embdedded device map, use a default arch string
  export ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG := $(shell echo $(CURRENT_ARCH_CONFIG) | tr A-Z a-z)

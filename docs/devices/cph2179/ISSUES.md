@@ -22,24 +22,21 @@ At validation time, `OPPO6765` was missing from the effective
 ```
 
 So the immediate failure is that the OPPO machine-config patch was not applied
-in that run. XNU still never reached kernel source compilation. The workflow
-had staged both Cactus and OPPO device patches into one XNU patch directory. It
-now stages by selected machine config: OPPO gets common/legacy patches, its
-own patch, and Cactus patch 0082 as the machine-config foundation expected by
-0115; later Cactus bring-up patches are excluded. This fixes the cross-device
-staging defect, though only another Actions run can confirm whether it was the
-reason 0115 was skipped and verify it applies to the fetched XNU source. The
-log confirms the Cortex-A53 flags were used for
-`libfirehose_kernel`; that host tool build is not the failing part.
+in that run. XNU still never reached kernel source compilation. The newer workflow stages OPPO patch 0115 and excludes Cactus-only patches. The
+newest log, `7_Build (4).txt`, still skips 0115 at
+`makedefs/MakeInc.def:61`; the subsequent unsupported-machine error is a result
+of that skipped patch. The failing hunk tried to add the Oppo compiler flags
+separately at a stale line location. The fix moves that definition into the
+same supported-machine hunk, whose surrounding context is already matched by
+the patch. This still needs an Actions run to confirm application against the
+fetched XNU tree.
 
 ### Next action
 
-On the next Actions run, confirm the staged patch list includes
-`0082-cactus-machine-config.patch` and `0115-oppo6765-machine-config.patch`,
-excludes Cactus patches 0084–0114, and reports 0115 as applied. Then confirm
-the post-patch `makedefs/MakeInc.def` ARM64 supported-config list contains
-`OPPO6765`. If 0115 is still skipped, capture the full patch warning, including
-`git apply --check`'s reason, before changing the patch contents.
+After committing the updated 0115 patch and manifest hash, confirm the Actions
+log says `REQUIRED OPPO PATCH APPLIED` and that `build_setup` passes the machine
+configuration check. That only confirms machine-config registration; it does
+not show that XNU source compilation succeeds or that the device can boot.
 
 Do not treat this run as an XNU kernel build: it stopped before compiling the
 kernel, and it produced no OPPO XNU payload or flashable image. Keep the raw
