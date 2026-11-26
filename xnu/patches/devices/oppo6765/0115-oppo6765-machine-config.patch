@@ -359,3 +359,12 @@ diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
  export ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG := arm64e
  endif
  endif
+diff --git a/pexpert/pexpert/arm/protos.h b/pexpert/pexpert/arm/protos.h
+--- a/pexpert/pexpert/arm/protos.h
++++ b/pexpert/pexpert/arm/protos.h
+@@ -36,4 +36,4 @@
+ void pe_init_fiq(void);
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_OPPO6765)
+ extern uint32_t sweet_vtimer_intid;
+ #endif
