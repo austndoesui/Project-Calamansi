@@ -11,7 +11,7 @@ diff --git a/osfmk/arm64/proc_reg.h b/osfmk/arm64/proc_reg.h
 --- a/osfmk/arm64/proc_reg.h
 +++ b/osfmk/arm64/proc_reg.h
 @@ -220,2 +220,9 @@
-+#elif defined (ARM64_BOARD_CONFIG_OPPO6765) /* Cortex-A53 */
++#elif defined (ARM64_BOARD_CONFIG_OPPO6765) || defined (OPPO6765) /* Cortex-A53 */
 +
 +/* Cortex-A53 instruction and data cache lines are 64 bytes. */
 +#define MMU_I_CLINE 6
@@ -346,7 +346,7 @@ diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
  else
 -SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE SWEET
 +SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE SWEET OPPO6765
-+MACHINE_FLAGS_ARM64_OPPO6765 = -DARM64_BOARD_CONFIG_OPPO6765 -mcpu=cortex-a53 -march=armv8-a
++MACHINE_FLAGS_ARM64_OPPO6765 = -DARM64_BOARD_CONFIG_OPPO6765 -DOPPO6765 -mcpu=cortex-a53 -march=armv8-a
  
  endif
 @@ -260,8 +261,8 @@ ifeq ($(ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG),)
